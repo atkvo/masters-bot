@@ -50,7 +50,7 @@ When first cloning this repository you must run the `init.sh` script to properly
 You will only need to run this step once when first cloning this repository so ROS can set up the proper build folders and scripts for your machine.
 
 ```sh
-git clone https://github.com/voandrew/masters-bot.git
+git clone https://github.com/atkvo/masters-bot.git
 cd masters-bot
 chmod +x init.sh
 ./init.sh
