@@ -1,0 +1,13 @@
+build/
+devel/
+msg_gen/
+srv_gen/
+bin/
+lib/
+cmake_install.cmake
+.DS_STORE
+.catkin_workspace
+*.pyc
+*.swp
+*~
+
