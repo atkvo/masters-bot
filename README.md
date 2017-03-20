@@ -4,13 +4,13 @@
 
 ### Components
 
-| Component         |
-| ----------------- |
-| Jetson TX1        |
-| Ubuntu 16.04      |
-| ROS Kinetic       |
-| Hokuyo Lidar      |
-| ZED Stereo Camera |
+| Component         | Info                        |
+| ----------------- | --------------------------- |
+| Jetson TX1        |                             |
+| Ubuntu 16.04      |                             |
+| ROS Kinetic       |                             |
+| Hokuyo Lidar      | apt: `ros-kinetic-urg-node` |
+| ZED Stereo Camera | sdk: `v1.2`                 |
 
 ### Users
 
@@ -18,8 +18,8 @@ To SSH into the Jetson use your own account so that all git pushes/pulls are fro
 
 ```sh
 ssh av@[jetsontx1]  # Andrew
-ssh el@[jetsontx1]  # Eric
-ssh ep@[jetsontx1]  # Elton
+ssh el@[jetsontx1]  # Elton
+ssh ep@[jetsontx1]  # Eric
 ssh jg@[jetsontx1]  # James
 ```
 
@@ -182,6 +182,8 @@ sudo apt-key adv --keyserver hkp://ha.pool.sks-keyservers.net:80 --recv-key 421C
 
 # Install ROS Kinetic
 sudo apt-get install ros-kinetic-desktop-full
+
+sudo apt install ros-kinetic-urg-node
 
 # Setup ROS
 sudo rosdep init
