@@ -42,15 +42,22 @@
   <!--   <run_depend>message_runtime</run_depend> -->
   <!-- Use test_depend for packages you need only for testing: -->
   <!--   <test_depend>gtest</test_depend> -->
+  <build_depend>message_generation</build_depend>
+  <run_depend>message_runtime</run_depend>  
+  <build_depend>tf</build_depend>
+  <run_depend>tf</run_depend>  
+  
   <buildtool_depend>catkin</buildtool_depend>
-  <!-- <build_depend>amcl</build_depend> -->
-  <!-- <build_depend>navigation</build_depend> -->
-  <build_depend>rosserial</build_depend>
-  <build_depend>urg_node</build_depend>
-  <!-- <run_depend>amcl</run_depend> -->
-  <!-- <run_depend>navigation</run_depend> -->
-  <run_depend>rosserial</run_depend>
-  <run_depend>urg_node</run_depend>
+  <build_depend>roscpp</build_depend>
+  <build_depend>rospy</build_depend>
+  <build_depend>sensor_msgs</build_depend>
+  <build_depend>std_msgs</build_depend>
+  <build_depend>geometry_msgs</build_depend>
+  <run_depend>roscpp</run_depend>
+  <run_depend>rospy</run_depend>
+  <run_depend>sensor_msgs</run_depend>
+  <run_depend>std_msgs</run_depend>
+  <run_depend>geometry_msgs</run_depend>
 
 
   <!-- The export tag contains other, unspecified, tags -->
