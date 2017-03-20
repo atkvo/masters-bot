@@ -18,8 +18,8 @@ To SSH into the Jetson use your own account so that all git pushes/pulls are fro
 
 ```sh
 ssh av@[jetsontx1]  # Andrew
-ssh el@[jetsontx1]  # Eric
-ssh ep@[jetsontx1]  # Elton
+ssh el@[jetsontx1]  # Elton
+ssh ep@[jetsontx1]  # Eric
 ssh jg@[jetsontx1]  # James
 ```
 
