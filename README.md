@@ -146,6 +146,7 @@ source devel/setup.bash
 ```
 
 ### Unable to run `roscore` due to incorrect ROS_IP
+> **NOTE:** This may  not apply to the current configuration since a bridge is no longer used. 
 
 Make sure that the environment variable `ROS_IP` is properly set to the Jetson's IP address on the bridge `br0`. View this IP address by running the command `ifconfig` and looking at the IP address for `br0`
 
@@ -197,14 +198,46 @@ sudo apt-get install python-rosinstall
 
 ### Network Setup
 
-#### Setting up SSH access on the TX1
-> The TX1 has a built in wifi chip (Broadcom?). The best configuration of the TX1 that's useable at SJSU is the following:
+The table below shows the Jetson's IP address on each of its interfaces after following the setup instructions.
 
 | Interface | Jetson IP     | Comments                                |
 | --------- | ------------- | --------------------------------------- |
 | `eth0`    | 192.168.x.xx  | Used for Internet connectivity          |
-| `eth1`    | 192.168.x.xx  | Used for Lidar                          |
+| `eth1`    | 192.168.13.14 | Used for Lidar                          |
 | `wlan0`   | 192.168.8.1   | Used so that users can SSH into the TX1 |
+
+The Hokuyo Lidar's IP address is set to **`192.168.13.15`** so that it doesn't conflict with the common network subnets `192.168.1.x`.
+
+
+
+#### Setting up the Hokuyo Lidar
+
+To set the IP of the Hokuyo Lidar:
+```sh
+# Install required package
+sudo apt install ros-kinetic-urg-node
+rosrun urg_node urg_node set_urg_ip.py 192.168.13.15 192.168.13.1 --nm 255.255.255.0 --ip 192.168.13.14
+```
+
+Add the following to `/etc/network/interfaces`
+> Note: the `metric 2000` line ensures that linux prioritizes eth0 over eth1 for Internet connectivity 
+
+```
+# Setup eth1 (Hokuyo)
+auto eth1
+iface eth1 inet static
+address 192.168.13.14
+netmask 255.255.255.0
+metric 2000
+
+# Automatically activated by hotplug subsystem
+# Internet network interface
+auto eth0
+iface eth0 inet dhcp
+```
+
+#### Setting up SSH access on the TX1
+> The TX1 has a built in wifi chip (Broadcom?). The best configuration of the TX1 that's useable at SJSU is the following:
 
 
 You made need to create the file if necessary. 
@@ -238,12 +271,8 @@ ieee8021x=0
 eap_server=0
 ```
 
-Modify the `/etc/network/interface` file so it resembles this:
-```sh
-# interfaces(5) file used by ifup(8) and ifdown(8)
-# Include files from /etc/network/interfaces.d:
-source-directory /etc/network/interfaces.d
-
+Add to the following to `/etc/network/interface`:
+```
 auto wlan0
 iface wlan0 inet static
 hostapd /etc/hostapd/hostapd.conf
@@ -263,12 +292,6 @@ dhcp-range=192.168.8.20,192.168.8.254,255.255.255.0,12h
 
 Note the `dhcp-range` parameter. All connecting devices will get an IP address between `192.168.8.20` and `192.168.8.254` in the above configuration.
 
-##### Install bridge-utils
-```sh
-sudo apt-get update
-sudo apt-get install bridge-utils
-```
-
 ##### Apply Changes
 
 Start the `hostapd` and `dnsmasq` services and then reboot the system
@@ -278,54 +301,32 @@ sudo systemctl start hostapd
 sudo reboot now
 ```
 
-#### Setup the Bridge
-> These instructions asumes you have the configuration below
-> This may not be needed for systems without PicoStation
+#### /etc/network/interfaces
 
-| Interface | Name             | Jetson  IP Address |
-| --------- | ---------------- | ------------------ |
-| `eth0`    | Pico Station     | 192.168.1.xx       |
-| `eth1`    | Lidar Connection | 192.168.1.xx       |
-| `br0`     | Bridge           | 192.168.1.2        |
-
-
-> **NOTE** The IP address of the LiDAR on `eth1` is set statically to `192.168.1.15`. Be sure that the Jetson's IP address is not set to this otherwise LIDAR streaming will fail.
-
-
-Bridge eth0 and eth1
-
-```sh
-sudo brctl addbr br0
-sudo brctl addif br0 eth0
-sudo brctl addif br0 eth1
+The final `/etc/network/interfaces` file looks like this:
 ```
+# interfaces(5) file used by ifup(8) and ifdown(8)
+# Include files from /etc/network/interfaces.d:
+source-directory /etc/network/interfaces.d
 
-Bring up the network bridge `br0`
-```sh
-sudo ifconfig br0 192.168.1.2 netmask 255.255.255.0 up
-```
+# Setup hotspot from wlan0
+auto wlan0
+iface wlan0 inet static
+hostapd /etc/hostapd/hostapd.conf
+address 192.168.8.1
+netmask 255.255.255.0
 
-Verify that the bridge is working
-```sh
-nmap -sP 192.168.1.0/24
-```
+# Setup eth1 (Hokuyo)
+auto eth1
+iface eth1 inet static
+address 192.168.13.14
+netmask 255.255.255.0
+metric 2000
 
-#### Setup Internet Connectivity
-
-To get Internet connectivity on the Jetson you must set a **default network device** or **default route**. There are two ways to do this: via the Network Manager GUI or via the commandline interface.
-
-##### Setup Default Route via Network Manager GUI
-
-In "Network Connections" dialog box, edit all the interfaces except for the wireless lan interface (`wlan0`).
-In the `IPv4` tab of each interface, press on the `Routes...` button. In this window make sure to check the option to **only use the interface for resources on its network**.
-
-##### Setup Default Route via CLI
-
-```sh
-ip route list # Use this to see all the possible current routes
-ip route del default 
-# ip route add default via [gateway] dev [interface]
-ip route add default via 10.250.255.254 dev wlan0  # example for SJSU network
+# Automatically activated by hotplug subsystem
+# Internet network interface
+auto eth0
+iface eth0 inet dhcp
 ```
 
 ### Optional Tools
