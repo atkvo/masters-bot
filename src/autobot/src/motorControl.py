@@ -41,7 +41,7 @@ def callback(data):
 
 
 def talker():
-    rospy.init_node('serial_talker', anonymous=True)
+    rospy.init_node('motorControl', anonymous=True)
     em_pub.publish(False)
     rospy.Subscriber("drive_parameters", drive_param, callback)
     rospy.spin()
