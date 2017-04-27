@@ -30,7 +30,7 @@ rm -rf ros_lib
 rosrun rosserial_arduino make_libraries .
 ```
 
-**NOTE**: `<sketchbook>` is the location of the default Arduino libraries folder. Generally located under ~/Arduino/libraries
+**NOTE**: `<sketchbook>` is the location of the default Arduino libraries folder. Generally located under `~/Arduino`
 
 ### 4  Program the Teensy 
 
