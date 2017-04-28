@@ -6,11 +6,13 @@ import curses
 
 global velocity
 global steerAngle
-global multiplier
+global velocityMultiplier
+global steerMultiplier
 
 velocity = 0
+velocityMultiplier = 10
+
 steerAngle = 0
-multiplier = 5
 steerIncrement = 15
 steerMultiplier = 1.5
 
@@ -63,11 +65,11 @@ def main():
         if key == curses.KEY_UP or key == ord('w'):
             modVelocity(0.1)
         elif key == ord('W'):
-            modVelocity(0.1 * multiplier)
+            modVelocity(0.1 * velocityMultiplier)
         elif key == curses.KEY_DOWN or key == ord('s'):
             modVelocity(-0.1)
         elif key == ord('S'):
-            modVelocity(-0.1 * multiplier)
+            modVelocity(-0.1 * velocityMultiplier)
 
         if key == curses.KEY_LEFT or key == ord('a'):
             modAngle(-1 * steerIncrement)
