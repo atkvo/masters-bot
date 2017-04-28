@@ -11,6 +11,8 @@ global multiplier
 velocity = 0
 steerAngle = 0
 multiplier = 5
+steerIncrement = 15
+steerMultiplier = 1.5
 
 stdscr = curses.initscr()
 curses.cbreak()
@@ -68,13 +70,13 @@ def main():
             modVelocity(-0.1 * multiplier)
 
         if key == curses.KEY_LEFT or key == ord('a'):
-            modAngle(-0.1)
+            modAngle(-1 * steerIncrement)
         elif key == ord('A'):
-            modAngle(-0.1 * multiplier)
+            modAngle(-1 * steerIncrement * steerMultiplier)
         elif key == curses.KEY_RIGHT or key == ord('d'):
-            modAngle(0.1)
+            modAngle(steerIncrement)
         elif key == ord('D'):
-            modAngle(0.1 * multiplier)
+            modAngle(steerIncrement * steerMultiplier)
         elif key == ord(' '):
             zeroVelocity()
         elif key == ord('c'):
