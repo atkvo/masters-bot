@@ -77,6 +77,7 @@ def main():
             modAngle(0.1 * multiplier)
         elif key == ord(' '):
             zeroVelocity()
+        elif key == ord('c'):
             zeroAngle()
 
         msg = drive_param()
