@@ -53,15 +53,15 @@ def control(data):
 
 
 def update_mode(_mode):
-	global mode
-	mode = _mode.data
+    global mode
+    mode = _mode.data
 
 
 if __name__ == '__main__':
-	print("Listening to error for PID")
-	rospy.init_node('pid_controller', anonymous=True)
-	rospy.Subscriber("error", pid_input, control)
-	rospy.Subscriber("mode", String, update_mode)
+    print("Listening to error for PID")
+    rospy.init_node('pid_controller', anonymous=True)
+    rospy.Subscriber("error", pid_input, control)
+    rospy.Subscriber("mode", String, update_mode)
 
-	rospy.spin()
+    rospy.spin()
 
