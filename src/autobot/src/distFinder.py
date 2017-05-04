@@ -5,14 +5,16 @@ import math
 from sensor_msgs.msg import LaserScan
 from autobot.msg import pid_input
 
-desired_trajectory = 1.5
-vel = 7.3
-rate = 0
+#TODO: NEED TO CHOOSE WHETHER WE WANT TO HUG LEFT OR HUG RIGHT OR HUG CLOSEST WALL.. LETS HUG RIGHT WALL FOR NOW (SIMULATE RIGHT SIDE OF ROAD)
+#SEND ERROR LEFT TO HUG LEFT WALL
+desired_trajectory = 0.5 #DESIRED DISTANCE FROM WALL
+vel = 7.3 #DRIVE VELOCITY
+rate = 0 #RATE TO PUBLISH TO ERROR TOPIC 
 
 pub = rospy.Publisher('error', pid_input, queue_size=10)
 
 def getRange(data, theta):
-    """ Find the index of the arary that corresponds to angle theta.
+    """ Find the index of the array that corresponds to angle theta.
     Return the lidar scan value at that index
     Do some error checking for NaN and absurd values
 	data: the LidarScan data
@@ -30,46 +32,50 @@ def getRange(data, theta):
     
 
 def callback(data):
-    theta = 50;
-    a = getRange(data, theta)
-    b = getRange(data, 0)
+    theta = 50; #PICK THIS ANGLE TO BE BETWEEN 0 AND 70 DEGREES
 
-    aL = getRange(data, 130)
-    bL = getRange(data, 180)
+    thetaDistanceRight = getRange(data, theta) #a
+    rightDistance = getRange(data, 0) #b
 
-    swing = math.radians(theta)
-    swingL = math.radians(130)
+    thetaDistanceLeft = getRange(data, 180-theta) #aL
+    leftDistance = getRange(data, 180) #bL
 
-    alpha = math.atan2( a * math.cos(swing) - b , a * math.sin(swing) )
-#    alphaL = math.atan2( aL * math.cos(swingL) - bL , aL * math.sin(swingL) )
-    alphaL = math.atan2( aL * math.cos(swing) - bL , aL * math.sin(swing) )
-#   alphaL = alphaL - 0.69
-    AB = b * math.cos(alpha)
-    ABL = bL * math.cos(alphaL)
+    thetaRadiansRight = math.radians(theta) #aRads
+    thetaRadiansLeft = math.radians(130) #bRads
 
-    AC = 1.0
-    CD = AB + AC * math.sin(alpha)    
-    CDL = ABL + AC * math.sin(alphaL)
+    carAngleRight = math.atan2( thetaDistanceRight * math.cos(thetaRadiansRight) - rightDistance , thetaDistanceRight * math.sin(thetaRadiansRight) ) #alpha
+    carAngleLeft = math.atan2( thetaDistanceLeft * math.cos(thetaRadiansRight) - leftDistance , thetaDistanceLeft * math.sin(thetaRadiansRight) ) #alphaL
 
-    error = CD - desired_trajectory
-    errorL = CDL - desired_trajectory
-    errorL *= -1
+    carToWallRight = rightDistance * math.cos(carAngleRight) #AB
+    carToWallLeft = leftDistance * math.cos(carAngleLeft) #ABL
 
-    print "alpha {} alphaL {}".format(alpha, alphaL)
-    print "a {} aL {}\nb {} bL {}".format(a, aL, b, bL)
-    print "AB {} ABL {}".format(AB, ABL)
-    print "CD {} CDL {}".format(CD, CDL)
-    print "error {} errorL {}".format(error, errorL)
+    distanceTraveled = 1.0 #AC #MAY NEED TO EDIT THIS VALUE 
+    projectedDistanceRight = carToWallRight + distanceTraveled * math.sin(carAngleRight) #CD
+    projectedDistanceLeft = carToWallLeft + distanceTraveled * math.sin(carAngleLeft) #CDL
+
+    #IF TOO FAR FROM WALL, TURN RIGHT TO GET CLOSER (ERRORRIGHT WILL BE POSITIVE)
+    #IF TOO CLOSE TO WALL, TURN LEFT TO GET FARTHER (ERRORRIGHT WILL BE NEGATIVE)
+    #THESE ERROR VALUES ARE DIFFERENCES BETWEEN YOUR PROJECTED FUTURE POSITION AND DISTANCE TO WALL
+    #ARE WE PROCESSING THIS ERROR CORRECTLY? GETS SENT TO PIDCONTROL.PY
+    errorRight = projectedDistanceRight - desired_trajectory  
+    errorLeft = projectedDistanceLeft - desired_trajectory
+    errorLeft *= -1
+
+    print "carAngleRight {} carAngleLeft {}".format(carAngleRight, carAngleLeft)
+    print "thetaDistanceRight {} thetaDistanceLeft {}\nrightDistance {} leftDistance {}".format(thetaDistanceRight, thetaDistanceLeft, rightDistance, leftDistance)
+    print "carToWallRight {} carToWallLeft {}".format(carToWallRight, carToWallLeft)
+    print "projectedDistanceRight {} projectedDistanceLeft {}".format(projectedDistanceRight, projectedDistanceLeft)
+    print "errorRight {} errorLeft {}".format(errorRight, errorLeft)
 
     msg = pid_input()
-#    msg.pid_error = error
-    msg.pid_error = errorL
+    msg.pid_error = errorRight
+    #msg.pid_error = errorLeft
     msg.pid_vel = vel
 
     global rate
     rate += 1
     if (rate % 10 == 0):
-        rat = 0
+        rate = 0
         pub.publish(msg)
 
 if __name__ == '__main__':
