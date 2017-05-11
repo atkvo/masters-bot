@@ -203,8 +203,9 @@ The table below shows the Jetson's IP address on each of its interfaces after fo
 | Interface | Jetson IP     | Comments                                |
 | --------- | ------------- | --------------------------------------- |
 | `eth0`    | 192.168.x.xx  | Used for Internet connectivity          |
-| `eth1`    | 192.168.13.14 | Used for Lidar                          |
+| `hokuyo0` | 192.168.13.14 | Used for Lidar                          |
 | `wlan0`   | 192.168.8.1   | Used so that users can SSH into the TX1 |
+| `tpspot0` | 192.168.0.100 | Used so that users can SSH into the TX1 |
 
 The Hokuyo Lidar's IP address is set to **`192.168.13.15`** so that it doesn't conflict with the common network subnets `192.168.1.x`.
 
