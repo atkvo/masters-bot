@@ -2,6 +2,7 @@
 
 import rospy
 import math
+from autobot.msg import drive_param
 from sensor_msgs.msg import LaserScan
 from autobot.msg import pid_input
 
@@ -12,6 +13,7 @@ vel = 7.3 #DRIVE VELOCITY
 rate = 0 #RATE TO PUBLISH TO ERROR TOPIC 
 
 pub = rospy.Publisher('error', pid_input, queue_size=10)
+motorPub = rospy.Publisher('drive_parameters', drive_param, queue_size=10)
 
 def getRange(data, theta):
     """ Find the index of the array that corresponds to angle theta.
@@ -32,6 +34,9 @@ def getRange(data, theta):
     
 
 def callback(data):
+
+    frontDistance = getRange(data, 90); 
+
     theta = 50; #PICK THIS ANGLE TO BE BETWEEN 0 AND 70 DEGREES
 
     thetaDistanceRight = getRange(data, theta) #a
@@ -39,6 +44,18 @@ def callback(data):
 
     thetaDistanceLeft = getRange(data, 180-theta) #aL
     leftDistance = getRange(data, 180) #bL
+
+    if frontDistance < 1:
+        #TURN
+        print "Blocked!"
+        driveParam = drive_param()
+        if rightDistance  > leftDistance:
+            driveParam.angle = 45
+        else
+            driveParam.angle = -45
+        driveParam.vel = vel
+        motorPub.publish(driveParam)
+        return
 
     thetaRadiansRight = math.radians(theta) #aRads
     thetaRadiansLeft = math.radians(130) #bRads
