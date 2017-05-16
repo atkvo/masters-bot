@@ -45,15 +45,17 @@ def callback(data):
     thetaDistanceLeft = getRange(data, 180-theta) #aL
     leftDistance = getRange(data, 180) #bL
 
-    if frontDistance < 1:
+    if frontDistance < 2:
         #TURN
         print "Blocked!"
         driveParam = drive_param()
         if rightDistance  > leftDistance:
-            driveParam.angle = 45
-        else
-            driveParam.angle = -45
-        driveParam.vel = vel
+            driveParam.angle = 90
+            print "Turning Right"
+        else:
+            driveParam.angle = -90
+            print "Turning Left"
+        driveParam.velocity = 7.3
         motorPub.publish(driveParam)
         return
 
