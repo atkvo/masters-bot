@@ -18,7 +18,7 @@ TODO
 """
 
 
-def parseCommand(cmd, pub, driveParam):
+def parseCommand(cmd, driveParam):
     """
     pass in Paa.aa where P is the ID of the command
     """
