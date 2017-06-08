@@ -26,7 +26,7 @@ def parseCommand(cmd, driveParam):
 
     # first test to see if able to parse the value from substring
     try:
-        val = float(cmd.substring(1))
+        val = float(cmd[1:])
     except ValueError:
         return driveParam   # unable to parse, bail
 
