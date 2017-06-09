@@ -21,21 +21,30 @@ TODO
 def parseCommand(cmd, driveParam):
     """
     pass in Paa.aa where P is the ID of the command
+
+    returns a tuple (driveParam, valid)
     """
     val = 0.0
+    validState = True
 
     # first test to see if able to parse the value from substring
     try:
         val = float(cmd[1:])
     except ValueError:
-        return driveParam   # unable to parse, bail
+        validState = False
+        return driveParam, validState  # unable to parse, bail
 
     if cmd[0] == 'V':
         driveParam.velocity = val
+        validState = True
     elif cmd[0] == 'A':
         driveParam.angle = val
+        validState = True
+    else:
+        # Unknown command byte
+        validState = False
 
-    return driveParam       # valid drive parameter parsed
+    return driveParam, validState  # valid drive parameter parsed
 
 
 def parseMessage(msg, pub):
@@ -47,9 +56,14 @@ def parseMessage(msg, pub):
     driveParam = drive_param()
     if ";" in msg:
         arr = msg.split(";")
+        okState = True
         for cmd in arr:
-            driveParam = parseCommand(cmd, driveParam)
-        pub.publish(driveParam)
+            driveParam, parseState = parseCommand(cmd, driveParam)
+            okState &= parseState
+
+        # Only publish driveParam if all parsed parameters are OK
+        if okState is True:
+            pub.publish(driveParam)
     else:
         pass
 
