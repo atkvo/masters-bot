@@ -80,7 +80,7 @@ def main():
 
     while True:
         data, addr = sock.recvfrom(1024)
-        parseMessage(str(data, "utf-8"), pub)
+        parseMessage(data.decode("utf-8"), pub)
 
 
 if __name__ == "__main__":
