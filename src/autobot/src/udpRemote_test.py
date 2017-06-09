@@ -3,6 +3,13 @@
 import unittest
 from udpRemote import parseCommand
 
+"""
+TODO
+- [ ] Convert to ROS test format: http://wiki.ros.org/unittest
+- [ ] Mock publisher
+- [ ] Node integration test
+"""
+
 
 class MockDriveParam:
     velocity = 0.0
