@@ -45,7 +45,7 @@ def callback(data):
     thetaDistanceLeft = getRange(data, 180-theta) #aL
     leftDistance = getRange(data, 180) #bL
 
-    if frontDistance < 2:
+    if frontDistance < 2.2:
         #TURN
         print "Blocked!"
         driveParam = drive_param()
