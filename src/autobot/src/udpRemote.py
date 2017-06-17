@@ -3,6 +3,7 @@
 import rospy
 import socket
 from autobot.msg import drive_param
+import sys
 
 """
 Warning: This code has not been tested at all
@@ -69,8 +70,10 @@ def parseMessage(msg, pub):
 
 
 def main():
-    UDP_IP = "127.0.0.1"    # loopback
+    #UDP_IP = "127.0.0.1"    # loopback
+    UDP_IP = "192.168.0.100"
     UDP_PORT = 11156
+    UDP_ADDRESS = (UDP_IP, UDP_PORT)
 
     rospy.init_node("udpRemote", anonymous=True)
     pub = rospy.Publisher("drive_parameters", drive_param, queue_size=10)
@@ -78,10 +81,15 @@ def main():
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.bind((UDP_IP, UDP_PORT))
 
+    print 'starting up on %s port %s' % UDP_ADDRESS
+    
     while True:
         data, addr = sock.recvfrom(1024)
-        parseMessage(data.decode("utf-8"), pub)
+        print 'received %s bytes from %s' % (len(data), addr)
+        print data
 
+        #parseMessage(data.decode("utf-8"), pub)
+        parseMessage(data.decode("unicode_escape"), pub)
 
 if __name__ == "__main__":
     main()
