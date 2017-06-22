@@ -16,6 +16,11 @@ find_package(catkin REQUIRED COMPONENTS
   tf
 )
 
+## Find system dependencies using CMake
+find_package(
+  OpenCV REQUIRED 
+)
+
 #  amcl
 #  navigation
 ## System dependencies are found with CMake's conventions
@@ -127,6 +132,7 @@ catkin_package(
 # include_directories(include)
 include_directories(
   ${catkin_INCLUDE_DIRS}
+  SYSTEM $(OpenCV_INCLUDE_DIRS})
 )
 
 ## Declare a C++ library
@@ -142,7 +148,12 @@ include_directories(
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-# add_executable(${PROJECT_NAME}_node src/autobot_node.cpp)
+add_executable(${PROJECT_NAME}_vision src/vision.cpp)
+add_dependencies(${PROJECT_NAME}_vision ${catkin_EXPORTED_TARGETS})
+target_link_libraries(${PROJECT_NAME}_vision 
+  ${OpenCV_LIBRARIES}
+  # ${catkin_LIBRARIES}
+)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
