@@ -1,5 +1,5 @@
 CC=g++
-SRC=vision.cpp
+SRC=VisionClassifier.cpp vision.cpp
 OUTPUT=vision.out
 BUILD=build
 
