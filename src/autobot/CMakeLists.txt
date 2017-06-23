@@ -10,6 +10,8 @@ project(autobot)
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
+  cv_bridge
+  image_transport
   std_msgs
   message_generation
   geometry_msgs
@@ -155,6 +157,12 @@ target_link_libraries(${PROJECT_NAME}_vision
   # ${catkin_LIBRARIES}
 )
 
+add_executable(visionNode src/visionnode.cpp src/VisionClassifier.cpp)
+add_dependencies(visionNode ${catkin_EXPORTED_TARGETS})
+target_link_libraries(visionNode 
+  ${OpenCV_LIBRARIES}
+  ${catkin_LIBRARIES}
+)
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
 ## target back to the shorter version for ease of user use
