@@ -24,16 +24,23 @@ void imageCallback(const sensor_msgs::ImageConstPtr& msg);
 
 int main(int argc, char **argv)
 {
-    String modelTxt = "model/bvlc_googlenet.prototxt";
-    String modelBin = "model/bvlc_googlenet.caffemodel";
-    int cameraNumber = (argc > 1) ? atoi(argv[1]) : 0;
+    VisionClassifier v;
+    VisionSettings settings;
 
-    CaffeModelFiles files;
-    files.prototxt = modelTxt;
-    files.modelBin = modelBin;
-    files.classNames = "model/synset_words.txt";
+    /* Load with default parameters */
+    settings.prototxt = "model/bvlc_googlenet.prototxt";
+    settings.modelBin = "model/bvlc_googlenet.caffemodel";
+    settings.classNames = "model/synset_words.txt";
+    settings.cameraNumber = 0;
 
-    if (!v.importModel(files))
+    /* Extract settings from CLI if available */
+    bool helpInvoked = settings.importFromArgs(argc, argv);
+
+    if (helpInvoked)
+    {
+        exit(0);
+    }
+    if (!v.importModel(settings))
     {
         std::cerr << "Error importing model files" << std::endl;
         return false;
@@ -44,10 +51,6 @@ int main(int argc, char **argv)
     image_transport::ImageTransport it(nh);
     image_transport::Subscriber sub = it.subscribe("camera/image", 1, imageCallback);
     ros::spin();
-
-    for (;;)
-    {
-    }
     return 0;
 } //main
 

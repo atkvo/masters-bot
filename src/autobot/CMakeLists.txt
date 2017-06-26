@@ -150,14 +150,21 @@ include_directories(
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-add_executable(${PROJECT_NAME}_vision src/vision.cpp src/VisionClassifier.cpp)
+add_executable(${PROJECT_NAME}_vision 
+  src/vision.cpp 
+  src/VisionClassifier.cpp
+  src/VisionSettings.cpp)
 add_dependencies(${PROJECT_NAME}_vision ${catkin_EXPORTED_TARGETS})
 target_link_libraries(${PROJECT_NAME}_vision 
   ${OpenCV_LIBRARIES}
   # ${catkin_LIBRARIES}
 )
 
-add_executable(visionNode src/visionnode.cpp src/VisionClassifier.cpp)
+add_executable(visionNode 
+  src/visionnode.cpp 
+  src/VisionClassifier.cpp 
+  src/VisionSettings.cpp)
+
 add_dependencies(visionNode ${catkin_EXPORTED_TARGETS})
 target_link_libraries(visionNode 
   ${OpenCV_LIBRARIES}
