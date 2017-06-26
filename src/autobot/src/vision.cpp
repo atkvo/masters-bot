@@ -2,7 +2,6 @@
 #include <opencv2/imgproc.hpp>
 #include <opencv2/highgui.hpp>
 using namespace cv;
-// using namespace cv::dnn;
 
 #include <fstream>
 #include <iostream>
@@ -16,17 +15,24 @@ const char * CENTER_WIN = "CENTER";
 
 int main(int argc, char **argv)
 {
-    String modelTxt = "model/bvlc_googlenet.prototxt";
-    String modelBin = "model/bvlc_googlenet.caffemodel";
-    int cameraNumber = (argc > 1) ? atoi(argv[1]) : 0;
-
-    CaffeModelFiles files;
-    files.prototxt = modelTxt;
-    files.modelBin = modelBin;
-    files.classNames = "model/synset_words.txt";
-
     VisionClassifier v;
-    if (!v.importModel(files))
+    VisionSettings settings;
+
+    /* Load with default parameters */
+    settings.prototxt = "model/bvlc_googlenet.prototxt";
+    settings.modelBin = "model/bvlc_googlenet.caffemodel";
+    settings.classNames = "model/synset_words.txt";
+    settings.cameraNumber = 0;
+
+    /* Extract settings from CLI if available */
+    bool helpInvoked = settings.importFromArgs(argc, argv);
+
+    if (helpInvoked)
+    {
+        exit(0);
+    }
+
+    if (!v.importModel(settings))
     {
         std::cerr << "Error importing model files" << std::endl;
         return false;
@@ -34,9 +40,9 @@ int main(int argc, char **argv)
 
     //! [Capture video images and classify]
     VideoCapture capture;
-    if (!capture.open(cameraNumber)) 
+    if (!capture.open(settings.cameraNumber)) 
     {
-        std::cerr << "Error opening camera #" << cameraNumber << std::endl;
+        std::cerr << "Error opening camera #" << settings.cameraNumber << std::endl;
         exit(-1);
     }
 

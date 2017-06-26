@@ -1,10 +1,13 @@
 CC=g++
-SRC=VisionClassifier.cpp vision.cpp
+SRC=VisionSettings.cpp VisionClassifier.cpp vision.cpp
 OUTPUT=vision.out
 BUILD=build
 
-all: $(BUILD)/$(OUTPUT)
+all: build
 	./$(BUILD)/$(OUTPUT)
+
+build: $(BUILD)/$(OUTPUT)
+	echo "Built"
 
 $(BUILD)/$(OUTPUT):
 	mkdir -p $(BUILD)

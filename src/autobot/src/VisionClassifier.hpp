@@ -10,16 +10,12 @@ using namespace cv;
 #include <iostream>
 #include <cstdlib>
 
-struct CaffeModelFiles {
-    String prototxt;
-    String modelBin;
-    String classNames;
-};
+#include "VisionSettings.hpp"
 
 class VisionClassifier
 {
 public:
-    bool importModel(CaffeModelFiles &model);
+    bool importModel(VisionSettings &model);
     void classify(cv::Mat &img);
     VisionClassifier() : mImported(false) { } 
     ~VisionClassifier() { }

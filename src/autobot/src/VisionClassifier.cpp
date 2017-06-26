@@ -1,12 +1,12 @@
 #include "VisionClassifier.hpp"
 
-bool VisionClassifier::importModel(CaffeModelFiles &model)
+bool VisionClassifier::importModel(VisionSettings &settings)
 {
     //! [Create the importer of Caffe model]
     Ptr<dnn::Importer> importer;
     try                                     //Try to import Caffe GoogleNet model
     {
-        importer = dnn::createCaffeImporter(model.prototxt, model.modelBin);
+        importer = dnn::createCaffeImporter(settings.prototxt, settings.modelBin);
     }
     catch (const cv::Exception &err)        //Importer can throw errors, we will catch them
     {
@@ -17,8 +17,8 @@ bool VisionClassifier::importModel(CaffeModelFiles &model)
     if (!importer)
     {
         std::cerr << "Can't load network by using the following files: " << std::endl;
-        std::cerr << "prototxt:   " << model.prototxt << std::endl;
-        std::cerr << "caffemodel: " << model.modelBin << std::endl;
+        std::cerr << "prototxt:   " << settings.prototxt << std::endl;
+        std::cerr << "caffemodel: " << settings.modelBin << std::endl;
         std::cerr << "bvlc_googlenet.caffemodel can be downloaded here:" << std::endl;
         std::cerr << "http://dl.caffe.berkeleyvision.org/bvlc_googlenet.caffemodel" << std::endl;
         // exit(-1);
@@ -28,7 +28,7 @@ bool VisionClassifier::importModel(CaffeModelFiles &model)
     importer->populateNet(mNet);
     importer.release();
 
-    if (!readClassNames(model.classNames.c_str())) {
+    if (!readClassNames(settings.classNames.c_str())) {
         return false;
     }
 
