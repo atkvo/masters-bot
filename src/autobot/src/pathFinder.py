@@ -1,10 +1,12 @@
 #!/usr/bin/env python
-
 import rospy
 import math
 from autobot.msg import drive_param
 from sensor_msgs.msg import LaserScan
 from autobot.msg import pid_input
+from autobot.msg import wall_dist
+# from autobot.srv import AdjustWallDist
+from autobot.srv import *
 
 """
 TODO:
@@ -18,6 +20,27 @@ rate = 0    # RATE TO PUBLISH TO ERROR TOPIC
 
 pub = rospy.Publisher('error', pid_input, queue_size=10)
 motorPub = rospy.Publisher('drive_parameters', drive_param, queue_size=10)
+
+
+def HandleAdjustWallDist(req):
+    """ Handler for adjusting the desired_trajectory parameter
+
+    Responds with wall_dist msg and a bool to verify that the
+    service command has been accepted
+    """
+    global desired_trajectory
+
+    print " wall {}".format(req.cmd.wall)
+    print " dist {}".format(req.cmd.dist)
+
+    resp = wall_dist()
+    resp.dist = desired_trajectory
+    isValid = desired_trajectory > 0
+
+    if isValid is True and req.cmd.wall is autobot.msg.wall_dist.WALL_RIGHT:
+        desired_trajectory = req.cmd.dist
+
+    return AdjustWallDistResponse(resp, isValid)
 
 
 def getRange(data, theta):
@@ -133,7 +156,8 @@ def callback(data):
         pub.publish(msg)
 
 if __name__ == '__main__':
-    print("Laser node started")
-    rospy.init_node('distFinder', anonymous=True)
+    print("Path finding node started")
+    rospy.Service('adjustWallDist', AdjustWallDist, HandleAdjustWallDist)
+    rospy.init_node('pathFinder', anonymous=True)
     rospy.Subscriber("scan", LaserScan, callback)
     rospy.spin()

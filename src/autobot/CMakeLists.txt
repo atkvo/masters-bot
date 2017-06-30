@@ -59,6 +59,7 @@ add_message_files(
   drive_values.msg
   drive_param.msg
   pid_input.msg
+  wall_dist.msg
 )
 
 ## Generate services in the 'srv' folder
