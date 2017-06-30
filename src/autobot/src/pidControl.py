@@ -6,8 +6,8 @@ from std_msgs.msg import String
 import math
 
 
-kp = 14.0 * 2
-kd = 0.09 * 4 	## handling how fast
+kp = 14.0 * 3
+kd = 0.09 * 10 	## handling how fast
 servo_offset = 18.5
 prev_error = 0.0 
 vel_input = 0.0

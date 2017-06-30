@@ -312,23 +312,39 @@ source-directory /etc/network/interfaces.d
 
 # Setup hotspot from wlan0
 auto wlan0
-iface wlan0 inet static
-hostapd /etc/hostapd/hostapd.conf
-address 192.168.8.1
-netmask 255.255.255.0
+    iface wlan0 inet static
+    hostapd /etc/hostapd/hostapd.conf
+    address 192.168.8.1
+    netmask 255.255.255.0
 
 # Setup eth1 (Hokuyo)
 auto eth1
-iface eth1 inet static
-address 192.168.13.14
-netmask 255.255.255.0
-metric 2000
+    iface eth1 inet static
+    address 192.168.13.14
+    netmask 255.255.255.0
+    metric 2000
+
+# Setup for use with external WiFi AP
+auto eth2
+    iface eth2 inet static
+    address 192.168.0.100
+    netmask 255.255.255.0
+    gateway 192.168.0.254
+    metric 1500
 
 # Automatically activated by hotplug subsystem
 # Internet network interface
 auto eth0
-iface eth0 inet dhcp
+    iface eth0 inet manual
 ```
+
+
+If there are problems connecting to the Internet via `eth0`, use this command:
+
+```
+dhclient eth0
+```
+
 
 ### Optional Tools
 
