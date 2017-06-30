@@ -2,8 +2,8 @@
   <arg name="svo_file"/>
   <arg name="zed_id"/>
 
-  <include file="$(find zed_wrapper)/launch/zed_tf.launch" />
-  <node name="zed_wrapper_node" pkg="zed_wrapper" type="zed_wrapper_node" output="screen">
+  <include file="$(find autobot)/launch/zed_tf.launch" />
+  <node name="autobot_zed" pkg="autobot" type="autobot_zed" output="screen" launch-prefix="xterm -e gdb --args">
 
     <!-- SVO file path -->
     <!-- param name="svo_filepath" value="$(arg svo_file)" /-->
@@ -14,7 +14,7 @@
     <param name="resolution"            value="3" />
     <param name="quality"               value="1" />
     <param name="sensing_mode"          value="1" />
-    <param name="frame_rate"            value="60" />
+    <param name="frame_rate"            value="15" />
     <!--param name="odometry_db"           value="" /-->
     <param name="openni_depth_mode"     value="0" />
     <param name="gpu_id"                value="-1" />
@@ -42,7 +42,7 @@
   </node>
 
   <!-- ROS URDF description of the ZED -->
-  <param name="zed_description" textfile="$(find zed_wrapper)/urdf/zed.urdf" />
+  <param name="zed_description" textfile="$(find autobot)/urdf/zed.urdf" />
   <node name="zed_state_publisher" pkg="robot_state_publisher" type="state_publisher">
     <remap from="robot_description" to="zed_description" />
   </node>

@@ -55,17 +55,19 @@
 #include <opencv2/calib3d/calib3d.hpp>
 
 #include <boost/make_shared.hpp>
+#include <boost/thread.hpp>
 
-#include <sensor_msgs/PointCloud2.h>
-#include <pcl_conversions/pcl_conversions.h>
-#include <pcl/point_cloud.h>
-#include <pcl/point_types.h>
+
+//#include <sensor_msgs/PointCloud2.h>
+//#include <pcl_conversions/pcl_conversions.h>
+//#include <pcl/point_cloud.h>
+//#include <pcl/point_types.h>
 
 #include <sl/Camera.hpp>
 
 using namespace std;
 
-namespace zed_wrapper {
+namespace autobot {
 
     class ZEDWrapperNodelet : public nodelet::Nodelet {
         ros::NodeHandle nh;
@@ -281,7 +283,7 @@ namespace zed_wrapper {
          * \param width : the width of the point cloud
          * \param height : the height of the point cloud
          * \param pub_cloud : the publisher object to use
-         */
+
         void publishPointCloud(int width, int height, ros::Publisher &pub_cloud) {
             pcl::PointCloud<pcl::PointXYZRGB> point_cloud;
             point_cloud.width = width;
@@ -307,7 +309,8 @@ namespace zed_wrapper {
             output.is_dense = false;
             pub_cloud.publish(output);
         }
-
+         */
+         
         /* \brief Publish the informations of a camera with a ros Publisher
          * \param cam_info_msg : the information message to publish
          * \param pub_cam_info : the publisher object to use
@@ -556,14 +559,14 @@ namespace zed_wrapper {
                     }
 
                     // Publish the point cloud if someone has subscribed to
-                    if (cloud_SubNumber > 0) {
-                        // Run the point cloud convertion asynchronously to avoid slowing down all the program
-                        // Retrieve raw pointCloud data
-                        zed->retrieveMeasure(cloud, sl::MEASURE_XYZBGRA);
-                        point_cloud_frame_id = cloud_frame_id;
-                        point_cloud_time = t;
-                        publishPointCloud(width, height, pub_cloud);
-                    }
+                    //if (cloud_SubNumber > 0) {
+                        //// Run the point cloud convertion asynchronously to avoid slowing down all the program
+                        //// Retrieve raw pointCloud data
+                        //zed->retrieveMeasure(cloud, sl::MEASURE_XYZBGRA);
+                        //point_cloud_frame_id = cloud_frame_id;
+                        //point_cloud_time = t;
+                        //publishPointCloud(width, height, pub_cloud);
+                    //}
 
                     // Publish the odometry if someone has subscribed to
                     if (odom_SubNumber > 0) {
@@ -689,7 +692,7 @@ namespace zed_wrapper {
                 NODELET_INFO_STREAM(errorCode2str(err));
                 std::this_thread::sleep_for(std::chrono::milliseconds(2000));
             }
-
+			cout << "ZED OPENED" << endl;
             //ERRCODE display
             dynamic_reconfigure::Server<zed_wrapper::ZedConfig> server;
             dynamic_reconfigure::Server<zed_wrapper::ZedConfig>::CallbackType f;
@@ -717,9 +720,9 @@ namespace zed_wrapper {
             pub_depth = it_zed.advertise(depth_topic, 1); //depth
             NODELET_INFO_STREAM("Advertized on topic " << depth_topic);
 
-            //PointCloud publisher
-            pub_cloud = nh.advertise<sensor_msgs::PointCloud2> (point_cloud_topic, 1);
-            NODELET_INFO_STREAM("Advertized on topic " << point_cloud_topic);
+            ////PointCloud publisher
+            //pub_cloud = nh.advertise<sensor_msgs::PointCloud2> (point_cloud_topic, 1);
+            //NODELET_INFO_STREAM("Advertized on topic " << point_cloud_topic);
 
             // Camera info publishers
             pub_rgb_cam_info = nh.advertise<sensor_msgs::CameraInfo>(rgb_cam_info_topic, 1); //rgb
@@ -732,8 +735,8 @@ namespace zed_wrapper {
             NODELET_INFO_STREAM("Advertized on topic " << depth_cam_info_topic);
 
             //Odometry publisher
-            pub_odom = nh.advertise<nav_msgs::Odometry>(odometry_topic, 1);
-            NODELET_INFO_STREAM("Advertized on topic " << odometry_topic);
+            //pub_odom = nh.advertise<nav_msgs::Odometry>(odometry_topic, 1);
+            //NODELET_INFO_STREAM("Advertized on topic " << odometry_topic);
 
             device_poll_thread = boost::shared_ptr<boost::thread>
                     (new boost::thread(boost::bind(&ZEDWrapperNodelet::device_poll, this)));
@@ -742,4 +745,4 @@ namespace zed_wrapper {
 } // namespace
 
 #include <pluginlib/class_list_macros.h>
-PLUGINLIB_EXPORT_CLASS(zed_wrapper::ZEDWrapperNodelet, nodelet::Nodelet);
+PLUGINLIB_EXPORT_CLASS(autobot::ZEDWrapperNodelet, nodelet::Nodelet);

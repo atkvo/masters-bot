@@ -10,13 +10,13 @@
   <maintainer email="ubuntu@todo.todo">Andrew Vo</maintainer>
   <maintainer email="ubuntu@todo.todo">Elton Leung</maintainer>
   <maintainer email="ubuntu@todo.todo">Eric Panganiban</maintainer>
-  <maintainer email="ubuntu@todo.todo">James Grantham</maintainer>
+  <maintainer email="james.grantham@gmail.com">James Grantham</maintainer>
 
 
   <!-- One license tag required, multiple allowed, one license per tag -->
   <!-- Commonly used license strings: -->
   <!--   BSD, MIT, Boost Software License, GPLv2, GPLv3, LGPLv2.1, LGPLv3 -->
-  <license>TODO</license>
+  <license>WTFPL</license>
 
 
   <!-- Url tags are optional, but multiple are allowed, one per tag -->
@@ -44,8 +44,8 @@
   <!--   <test_depend>gtest</test_depend> -->
   <build_depend>message_generation</build_depend>
   <run_depend>message_runtime</run_depend>  
-  <build_depend>tf</build_depend>
-  <run_depend>tf</run_depend>  
+  <!--build_depend>tf</build_depend-->
+  <!--run_depend>tf</run_depend-->  
   
   <buildtool_depend>catkin</buildtool_depend>
   <build_depend>roscpp</build_depend>
@@ -53,16 +53,26 @@
   <build_depend>sensor_msgs</build_depend>
   <build_depend>std_msgs</build_depend>
   <build_depend>geometry_msgs</build_depend>
+  <build_depend>rosconsole</build_depend>
+  <build_depend>tf2_ros</build_depend>
+  <build_depend>image_transport</build_depend>
+  <build_depend>dynamic_reconfigure</build_depend>
+  <build_depend>nodelet</build_depend>
+
   <run_depend>roscpp</run_depend>
   <run_depend>rospy</run_depend>
   <run_depend>sensor_msgs</run_depend>
   <run_depend>std_msgs</run_depend>
   <run_depend>geometry_msgs</run_depend>
-
+  <run_depend>tf2_ros</run_depend>
+  <run_depend>rosconsole</run_depend>
+  <run_depend>image_transport</run_depend>
+  <run_depend>dynamic_reconfigure</run_depend>
+  <run_depend>nodelet</run_depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>
     <!-- Other tools can request additional information be placed here -->
-
+    <nodelet plugin="${prefix}/nodelet_plugins.xml" />
   </export>
 </package>
