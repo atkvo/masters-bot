@@ -18,7 +18,8 @@ TODO:
 
 
 class PathConfig(object):
-    __slots__ = ('wallToWatch', 'desiredTrajectory', 'velocity', 'pubRate')
+    __slots__ = ('wallToWatch', 'desiredTrajectory', 'velocity', 'pubRate',
+                 'minFrontDist')
     """
     wallToWatch: Set which wall to hug
     options: autobot.msg.wall_dist.WALL_LEFT
