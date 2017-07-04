@@ -14,31 +14,46 @@ TODO:
     - Right wall hugged for now to simulate right side of road
 - [ ] Send error left to hug left wall
 """
-desired_trajectory = 0.5  # DESIRED DISTANCE FROM WALL
-vel = 7.3   # DRIVE VELOCITY
-rate = 0    # RATE TO PUBLISH TO ERROR TOPIC
 
-pub = rospy.Publisher('error', pid_input, queue_size=10)
+
+class PathConfig(object):
+    __slots__ = ('wallToWatch', 'desiredTrajectory', 'velocity', 'pubRate')
+    """
+    wallToWatch: Set which wall to hug
+    options: autobot.msg.wall_dist.WALL_LEFT
+             autobot.msg.wall_dist.WALL_RIGHT
+             autobot.msg.wall_dist.WALL_FRONT  #< probably won't be used
+    """
+    wallToWatch = autobot.msg.wall_dist.WALL_RIGHT
+    desiredTrajectory = 0.5  # desired distance from the wall
+    minFrontDist = 2.2       # minimum required distance in front of car
+    velocity = 7.3           # velocity of drive
+    pubRate = 0              # publish rate of node
+
+
+errorPub = rospy.Publisher('error', pid_input, queue_size=10)
 motorPub = rospy.Publisher('drive_parameters', drive_param, queue_size=10)
 
 
 def HandleAdjustWallDist(req):
-    """ Handler for adjusting the desired_trajectory parameter
+    """ Handler for adjusting wall hugging parameters
 
     Responds with wall_dist msg and a bool to verify that the
     service command has been accepted
     """
-    global desired_trajectory
+    global PathConfig
 
     print " wall {}".format(req.cmd.wall)
     print " dist {}".format(req.cmd.dist)
 
     resp = wall_dist()
-    resp.dist = desired_trajectory
-    isValid = desired_trajectory > 0
+    isValid = req.cmd.dist >= 0
 
     if isValid is True and req.cmd.wall is autobot.msg.wall_dist.WALL_RIGHT:
-        desired_trajectory = req.cmd.dist
+        PathConfig.wallToWatch = req.cmd.wall
+        PathConfig.desiredTrajectory = req.cmd.dist
+        resp.wall = PathConfig.wallToWatch
+        resp.dist = PathConfig.desiredTrajectory
 
     return AdjustWallDistResponse(resp, isValid)
 
@@ -50,7 +65,6 @@ def getRange(data, theta):
     data: the LidarScan data
     theta: the angle to return the distance for
     """
-
     car_theta = math.radians(theta) - math.pi / 2
     if car_theta > 3 * math.pi / 4:
         car_theta = 3 * math.pi / 4
@@ -63,6 +77,7 @@ def getRange(data, theta):
 
 
 def callback(data):
+    global PathConfig
 
     frontDistance = getRange(data, 90)
 
@@ -74,7 +89,7 @@ def callback(data):
     thetaDistLeft = getRange(data, 180-theta)  # aL
     leftDist = getRange(data, 180)  # bL
 
-    if frontDistance < 2.2:
+    if frontDistance < PathConfig.minFrontDist:
         # TURN
         print "Blocked!"
         driveParam = drive_param()
@@ -84,7 +99,7 @@ def callback(data):
         else:
             driveParam.angle = -90
             print "Turning Left"
-        driveParam.velocity = 7.3
+        driveParam.velocity = PathConfig.velocity
         motorPub.publish(driveParam)
         return
 
@@ -122,8 +137,8 @@ def callback(data):
     and the distance to the wall
     """
     # ARE WE PROCESSING THIS ERROR CORRECTLY? GETS SENT TO PIDCONTROL.PY
-    errorRight = projectedDistRight - desired_trajectory
-    errorLeft = projectedDistLeft - desired_trajectory
+    errorRight = projectedDistRight - PathConfig.desiredTrajectory
+    errorLeft = projectedDistLeft - PathConfig.desiredTrajectory
     errorLeft *= -1
 
     print "carAngleRight {} carAngleLeft {}".format(carAngleRight,
@@ -147,13 +162,12 @@ def callback(data):
     msg = pid_input()
     msg.pid_error = errorRight
     # msg.pid_error = errorLeft
-    msg.pid_vel = vel
+    msg.pid_vel = PathConfig.velocity
 
-    global rate
-    rate += 1
-    if (rate % 10 == 0):
-        rate = 0
-        pub.publish(msg)
+    PathConfig.pubRate += 1
+    if (PathConfig.pubRate % 10 == 0):
+        PathConfig.pubRate = 0
+        errorPub.publish(msg)
 
 if __name__ == '__main__':
     print("Path finding node started")
