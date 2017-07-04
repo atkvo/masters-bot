@@ -12,7 +12,8 @@ from autobot.srv import *
 TODO:
 - [x] Decide if you want to hug right/left/or closest wall
     - Right wall hugged for now to simulate right side of road
-- [ ] Send error left to hug left wall
+    - Update: wall decision to be made by image processing node
+- [x] Send error left to hug left wall
 """
 
 
@@ -49,12 +50,18 @@ def HandleAdjustWallDist(req):
     resp = wall_dist()
     isValid = req.cmd.dist >= 0
 
-    if isValid is True and req.cmd.wall is autobot.msg.wall_dist.WALL_RIGHT:
+    if isValid is True and req.cmd.wall != autobot.msg.wall_dist.WALL_FRONT:
+        """ only accept WALL_LEFT or WALL_RIGHT
+        Service client can send an invalid wall or distance
+        query current settings
+        """
         PathConfig.wallToWatch = req.cmd.wall
         PathConfig.desiredTrajectory = req.cmd.dist
-        resp.wall = PathConfig.wallToWatch
-        resp.dist = PathConfig.desiredTrajectory
+    else:
+        isValid = False
 
+    resp.wall = PathConfig.wallToWatch
+    resp.dist = PathConfig.desiredTrajectory
     return AdjustWallDistResponse(resp, isValid)
 
 
@@ -160,8 +167,11 @@ def callback(data):
     print "errorRight {} errorLeft {}".format(errorRight, errorLeft)
 
     msg = pid_input()
-    msg.pid_error = errorRight
-    # msg.pid_error = errorLeft
+    if PathConfig.wallToWatch == autobot.msg.wall_dist.WALL_LEFT:
+        msg.pid_error = errorLeft
+    else:
+        msg.pid_error = errorRight
+
     msg.pid_vel = PathConfig.velocity
 
     PathConfig.pubRate += 1
