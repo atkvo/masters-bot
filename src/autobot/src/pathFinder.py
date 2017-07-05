@@ -150,23 +150,24 @@ def callback(data):
     errorLeft = projectedDistLeft - PathConfig.desiredTrajectory
     errorLeft *= -1
 
-    print "carAngleRight {} carAngleLeft {}".format(carAngleRight,
-                                                    carAngleLeft)
-    print ("thetaDistRight {} thetaDistLeft {}\n"
-           "rightDist {} leftDist {}").format(
-        thetaDistRight,
-        thetaDistLeft,
-        rightDist,
-        leftDist)
+    dbg = ("----------------------------------\n"
+            "             | LEFT     | RIGHT\n"
+            "------------ + -------- + --------\n"
+            "    carAngle | {:6.3f}   | {:6.3f}\n"
+            "   thetaDist | {:6.3f}   | {:6.3f}\n"
+            "    distance | {:6.3f}   | {:6.3f}\n"
+            "   carToWall | {:6.3f}   | {:6.3f}\n"
+            "   projected | {:6.3f}   | {:6.3f}\n"
+            "       error | {:6.3f}   | {:6.3f}\n"
+            "----------------------------------\n").format(
+                carAngleLeft, carAngleRight,
+                thetaDistLeft, thetaDistRight,
+                leftDist, rightDist,
+                carToWallLeft, carToWallRight,
+                projectedDistLeft, projectedDistRight,
+                errorLeft, errorRight)
 
-    print "carToWallRight {} carToWallLeft {}".format(
-        carToWallRight,
-        carToWallLeft)
-    print "projectedDistRight {} projectedDistLeft {}".format(
-        projectedDistRight,
-        projectedDistLeft)
-
-    print "errorRight {} errorLeft {}\n".format(errorRight, errorLeft)
+    print dbg
 
     msg = pid_input()
     if PathConfig.wallToWatch == autobot.msg.wall_dist.WALL_LEFT:
