@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 import rospy
 import math
+import autobot
 from autobot.msg import drive_param
 from sensor_msgs.msg import LaserScan
 from autobot.msg import pid_input
 from autobot.msg import wall_dist
-# from autobot.srv import AdjustWallDist
-from autobot.srv import *
+from autobot.srv import AdjustWallDist
 
 """
 TODO:
@@ -14,6 +14,7 @@ TODO:
     - Right wall hugged for now to simulate right side of road
     - Update: wall decision to be made by image processing node
 - [x] Send error left to hug left wall
+- [ ] Use a command line argument to enable/disable debug msgs
 """
 
 
@@ -165,7 +166,7 @@ def callback(data):
         projectedDistRight,
         projectedDistLeft)
 
-    print "errorRight {} errorLeft {}".format(errorRight, errorLeft)
+    print "errorRight {} errorLeft {}\n".format(errorRight, errorLeft)
 
     msg = pid_input()
     if PathConfig.wallToWatch == autobot.msg.wall_dist.WALL_LEFT:
