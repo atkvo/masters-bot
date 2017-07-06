@@ -3,7 +3,7 @@
   <arg name="zed_id"/>
 
   <include file="$(find autobot)/launch/zed_tf.launch" />
-  <node name="autobot_zed" pkg="autobot" type="autobot_zed" output="screen" launch-prefix="xterm -e gdb --args">
+  <node name="autobot_zed" pkg="autobot" type="autobot_zed" output="screen" >
 
     <!-- SVO file path -->
     <!-- param name="svo_filepath" value="$(arg svo_file)" /-->
@@ -15,7 +15,7 @@
     <param name="quality"               value="1" />
     <param name="sensing_mode"          value="1" />
     <param name="frame_rate"            value="15" />
-    <!--param name="odometry_db"           value="" /-->
+    <param name="odometry_db"           value="" />
     <param name="openni_depth_mode"     value="0" />
     <param name="gpu_id"                value="-1" />
 
