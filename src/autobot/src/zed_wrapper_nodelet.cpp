@@ -43,7 +43,7 @@
 #include <sensor_msgs/image_encodings.h>
 #include <image_transport/image_transport.h>
 #include <dynamic_reconfigure/server.h>
-#include <zed_wrapper/ZedConfig.h>
+#include <autobot/AutobotConfig.h>
 #include <nav_msgs/Odometry.h>
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2_ros/transform_broadcaster.h>
@@ -121,9 +121,9 @@ namespace autobot {
         int openniDepthMode = 0; // 16 bit UC data in mm else 32F in m, for more info http://www.ros.org/reps/rep-0118.html
 
         // Point cloud variables
-        sl::Mat cloud;
-        string point_cloud_frame_id = "";
-        ros::Time point_cloud_time;
+        //sl::Mat cloud;
+        //string point_cloud_frame_id = "";
+        //ros::Time point_cloud_time;
 
         /* \brief Convert an sl:Mat to a cv::Mat
          * \param mat : the sl::Mat to convert
@@ -210,22 +210,22 @@ namespace autobot {
          * \param odom_frame_id : the id of the reference frame of the pose
          * \param t : the ros::Time to stamp the image
          */
-        void publishOdom(sl::Pose pose, ros::Publisher &pub_odom, string odom_frame_id, ros::Time t) {
-            nav_msgs::Odometry odom;
-            odom.header.stamp = t;
-            odom.header.frame_id = odom_frame_id;
-            //odom.child_frame_id = "zed_optical_frame";
-            sl::Translation translation = pose.getTranslation();
-            odom.pose.pose.position.x = translation(2);
-            odom.pose.pose.position.y = -translation(0);
-            odom.pose.pose.position.z = -translation(1);
-            sl::Orientation quat = pose.getOrientation();
-            odom.pose.pose.orientation.x = quat(2);
-            odom.pose.pose.orientation.y = -quat(0);
-            odom.pose.pose.orientation.z = -quat(1);
-            odom.pose.pose.orientation.w = quat(3);
-            pub_odom.publish(odom);
-        }
+        //void publishOdom(sl::Pose pose, ros::Publisher &pub_odom, string odom_frame_id, ros::Time t) {
+            //nav_msgs::Odometry odom;
+            //odom.header.stamp = t;
+            //odom.header.frame_id = odom_frame_id;
+            ////odom.child_frame_id = "zed_optical_frame";
+            //sl::Translation translation = pose.getTranslation();
+            //odom.pose.pose.position.x = translation(2);
+            //odom.pose.pose.position.y = -translation(0);
+            //odom.pose.pose.position.z = -translation(1);
+            //sl::Orientation quat = pose.getOrientation();
+            //odom.pose.pose.orientation.x = quat(2);
+            //odom.pose.pose.orientation.y = -quat(0);
+            //odom.pose.pose.orientation.z = -quat(1);
+            //odom.pose.pose.orientation.w = quat(3);
+            //pub_odom.publish(odom);
+        //}
 
         /* \brief Publish the pose of the camera as a transformation
          * \param pose : the 4x4 matrix representing the camera pose
@@ -233,23 +233,23 @@ namespace autobot {
          * \param odometry_transform_frame_id : the id of the transformation
          * \param t : the ros::Time to stamp the image
          */
-        void publishTrackedFrame(sl::Pose pose, tf2_ros::TransformBroadcaster &trans_br, string odometry_transform_frame_id, ros::Time t) {
+        //void publishTrackedFrame(sl::Pose pose, tf2_ros::TransformBroadcaster &trans_br, string odometry_transform_frame_id, ros::Time t) {
 
-            geometry_msgs::TransformStamped transformStamped;
-            transformStamped.header.stamp = ros::Time::now();
-            transformStamped.header.frame_id = "zed_initial_frame";
-            transformStamped.child_frame_id = odometry_transform_frame_id;
-            sl::Translation translation = pose.getTranslation();
-            transformStamped.transform.translation.x = translation(2);
-            transformStamped.transform.translation.y = -translation(0);
-            transformStamped.transform.translation.z = -translation(1);
-            sl::Orientation quat = pose.getOrientation();
-            transformStamped.transform.rotation.x = quat(2);
-            transformStamped.transform.rotation.y = -quat(0);
-            transformStamped.transform.rotation.z = -quat(1);
-            transformStamped.transform.rotation.w = quat(3);
-            trans_br.sendTransform(transformStamped);
-        }
+            //geometry_msgs::TransformStamped transformStamped;
+            //transformStamped.header.stamp = ros::Time::now();
+            //transformStamped.header.frame_id = "zed_initial_frame";
+            //transformStamped.child_frame_id = odometry_transform_frame_id;
+            //sl::Translation translation = pose.getTranslation();
+            //transformStamped.transform.translation.x = translation(2);
+            //transformStamped.transform.translation.y = -translation(0);
+            //transformStamped.transform.translation.z = -translation(1);
+            //sl::Orientation quat = pose.getOrientation();
+            //transformStamped.transform.rotation.x = quat(2);
+            //transformStamped.transform.rotation.y = -quat(0);
+            //transformStamped.transform.rotation.z = -quat(1);
+            //transformStamped.transform.rotation.w = quat(3);
+            //trans_br.sendTransform(transformStamped);
+        //}
 
         /* \brief Publish a cv::Mat image with a ros Publisher
          * \param img : the image to publish
@@ -267,17 +267,17 @@ namespace autobot {
          * \param depth_frame_id : the id of the reference frame of the depth image
          * \param t : the ros::Time to stamp the depth image
          */
-        void publishDepth(cv::Mat depth, image_transport::Publisher &pub_depth, string depth_frame_id, ros::Time t) {
-            string encoding;
-            if (openniDepthMode) {
-                depth *= 1000.0f;
-                depth.convertTo(depth, CV_16UC1); // in mm, rounded
-                encoding = sensor_msgs::image_encodings::TYPE_16UC1;
-            } else {
-                encoding = sensor_msgs::image_encodings::TYPE_32FC1;
-            }
-            pub_depth.publish(imageToROSmsg(depth, encoding, depth_frame_id, t));
-        }
+        //void publishDepth(cv::Mat depth, image_transport::Publisher &pub_depth, string depth_frame_id, ros::Time t) {
+            //string encoding;
+            //if (openniDepthMode) {
+                //depth *= 1000.0f;
+                //depth.convertTo(depth, CV_16UC1); // in mm, rounded
+                //encoding = sensor_msgs::image_encodings::TYPE_16UC1;
+            //} else {
+                //encoding = sensor_msgs::image_encodings::TYPE_32FC1;
+            //}
+            //pub_depth.publish(imageToROSmsg(depth, encoding, depth_frame_id, t));
+        //}
 
         /* \brief Publish a pointCloud with a ros Publisher
          * \param width : the width of the point cloud
@@ -391,7 +391,7 @@ namespace autobot {
             right_cam_info_msg->header.frame_id = right_frame_id;
         }
 
-        void callback(zed_wrapper::ZedConfig &config, uint32_t level) {
+        void callback(autobot::AutobotConfig &config, uint32_t level) {
             NODELET_INFO("Reconfigure confidence : %d", config.confidence);
             confidence = config.confidence;
         }
@@ -412,12 +412,12 @@ namespace autobot {
             cv::Mat rightImRGB(cvSize, CV_8UC3);
 
             // Create and fill the camera information messages
-            sensor_msgs::CameraInfoPtr rgb_cam_info_msg(new sensor_msgs::CameraInfo());
+            //sensor_msgs::CameraInfoPtr rgb_cam_info_msg(new sensor_msgs::CameraInfo());
             sensor_msgs::CameraInfoPtr left_cam_info_msg(new sensor_msgs::CameraInfo());
             sensor_msgs::CameraInfoPtr right_cam_info_msg(new sensor_msgs::CameraInfo());
-            sensor_msgs::CameraInfoPtr depth_cam_info_msg(new sensor_msgs::CameraInfo());
+            //sensor_msgs::CameraInfoPtr depth_cam_info_msg(new sensor_msgs::CameraInfo());
             fillCamInfo(zed.get(), left_cam_info_msg, right_cam_info_msg, left_frame_id, right_frame_id);
-            rgb_cam_info_msg = depth_cam_info_msg = left_cam_info_msg; // the reference camera is the Left one (next to the ZED logo)
+            //rgb_cam_info_msg = depth_cam_info_msg = left_cam_info_msg; // the reference camera is the Left one (next to the ZED logo)
 
 
             sl::RuntimeParameters runParams;
@@ -512,26 +512,26 @@ namespace autobot {
                             publishCamInfo(left_cam_info_msg, pub_left_cam_info, t);
                             publishImage(leftImRGB, pub_left, left_frame_id, t);
                         }
-                        if (rgb_SubNumber > 0) {
-                            publishCamInfo(rgb_cam_info_msg, pub_rgb_cam_info, t);
-                            publishImage(leftImRGB, pub_rgb, rgb_frame_id, t); // rgb is the left image
-                        }
+                        //if (rgb_SubNumber > 0) {
+                            //publishCamInfo(rgb_cam_info_msg, pub_rgb_cam_info, t);
+                            //publishImage(leftImRGB, pub_rgb, rgb_frame_id, t); // rgb is the left image
+                        //}
                     }
 
                     // Publish the left_raw == rgb_raw image if someone has subscribed to
-                    if (left_raw_SubNumber > 0 || rgb_raw_SubNumber > 0) {
-                        // Retrieve RGBA Left image
-                        zed->retrieveImage(leftZEDMat, sl::VIEW_LEFT_UNRECTIFIED);
-                        cv::cvtColor(toCVMat(leftZEDMat), leftImRGB, CV_RGBA2RGB);
-                        if (left_raw_SubNumber > 0) {
-                            publishCamInfo(left_cam_info_msg, pub_left_cam_info, t);
-                            publishImage(leftImRGB, pub_raw_left, left_frame_id, t);
-                        }
-                        if (rgb_raw_SubNumber > 0) {
-                            publishCamInfo(rgb_cam_info_msg, pub_rgb_cam_info, t);
-                            publishImage(leftImRGB, pub_raw_rgb, rgb_frame_id, t);
-                        }
-                    }
+                    //if (left_raw_SubNumber > 0 || rgb_raw_SubNumber > 0) {
+                        //// Retrieve RGBA Left image
+                        //zed->retrieveImage(leftZEDMat, sl::VIEW_LEFT_UNRECTIFIED);
+                        //cv::cvtColor(toCVMat(leftZEDMat), leftImRGB, CV_RGBA2RGB);
+                        //if (left_raw_SubNumber > 0) {
+                            //publishCamInfo(left_cam_info_msg, pub_left_cam_info, t);
+                            //publishImage(leftImRGB, pub_raw_left, left_frame_id, t);
+                        //}
+                        //if (rgb_raw_SubNumber > 0) {
+                            //publishCamInfo(rgb_cam_info_msg, pub_rgb_cam_info, t);
+                            //publishImage(leftImRGB, pub_raw_rgb, rgb_frame_id, t);
+                        //}
+                    //}
 
                     // Publish the right image if someone has subscribed to
                     if (right_SubNumber > 0) {
@@ -543,20 +543,20 @@ namespace autobot {
                     }
 
                     // Publish the right image if someone has subscribed to
-                    if (right_raw_SubNumber > 0) {
-                        // Retrieve RGBA Right image
-                        zed->retrieveImage(rightZEDMat, sl::VIEW_RIGHT_UNRECTIFIED);
-                        cv::cvtColor(toCVMat(rightZEDMat), rightImRGB, CV_RGBA2RGB);
-                        publishCamInfo(right_cam_info_msg, pub_right_cam_info, t);
-                        publishImage(rightImRGB, pub_raw_right, right_frame_id, t);
-                    }
+                    //if (right_raw_SubNumber > 0) {
+                        //// Retrieve RGBA Right image
+                        //zed->retrieveImage(rightZEDMat, sl::VIEW_RIGHT_UNRECTIFIED);
+                        //cv::cvtColor(toCVMat(rightZEDMat), rightImRGB, CV_RGBA2RGB);
+                        //publishCamInfo(right_cam_info_msg, pub_right_cam_info, t);
+                        //publishImage(rightImRGB, pub_raw_right, right_frame_id, t);
+                    //}
 
                     // Publish the depth image if someone has subscribed to
-                    if (depth_SubNumber > 0) {
-                        zed->retrieveMeasure(depthZEDMat, sl::MEASURE_DEPTH);
-                        publishCamInfo(depth_cam_info_msg, pub_depth_cam_info, t);
-                        publishDepth(toCVMat(depthZEDMat), pub_depth, depth_frame_id, t); // in meters
-                    }
+                    //if (depth_SubNumber > 0) {
+                        //zed->retrieveMeasure(depthZEDMat, sl::MEASURE_DEPTH);
+                        //publishCamInfo(depth_cam_info_msg, pub_depth_cam_info, t);
+                        //publishDepth(toCVMat(depthZEDMat), pub_depth, depth_frame_id, t); // in meters
+                    //}
 
                     // Publish the point cloud if someone has subscribed to
                     //if (cloud_SubNumber > 0) {
@@ -569,18 +569,18 @@ namespace autobot {
                     //}
 
                     // Publish the odometry if someone has subscribed to
-                    if (odom_SubNumber > 0) {
-                        zed->getPosition(pose);
-                        publishOdom(pose, pub_odom, odometry_frame_id, t);
-                    }
+                    //if (odom_SubNumber > 0) {
+                        //zed->getPosition(pose);
+                        //publishOdom(pose, pub_odom, odometry_frame_id, t);
+                    //}
 
                     //Note, the frame is published, but its values will only change if someone has subscribed to odom
-                    publishTrackedFrame(pose, transform_odom_broadcaster, odometry_transform_frame_id, t); //publish the tracked Frame
+                    //publishTrackedFrame(pose, transform_odom_broadcaster, odometry_transform_frame_id, t); //publish the tracked Frame
 
                     loop_rate.sleep();
                 } else {
 
-                    publishTrackedFrame(pose, transform_odom_broadcaster, odometry_transform_frame_id, ros::Time::now()); //publish the tracked Frame before the sleep
+                    //publishTrackedFrame(pose, transform_odom_broadcaster, odometry_transform_frame_id, ros::Time::now()); //publish the tracked Frame before the sleep
                     std::this_thread::sleep_for(std::chrono::milliseconds(10)); // No subscribers, we just wait
                 }
             } // while loop
@@ -694,8 +694,8 @@ namespace autobot {
             }
 			cout << "ZED OPENED" << endl;
             //ERRCODE display
-            dynamic_reconfigure::Server<zed_wrapper::ZedConfig> server;
-            dynamic_reconfigure::Server<zed_wrapper::ZedConfig>::CallbackType f;
+            dynamic_reconfigure::Server<autobot::AutobotConfig> server;
+            dynamic_reconfigure::Server<autobot::AutobotConfig>::CallbackType f;
 
             f = boost::bind(&ZEDWrapperNodelet::callback, this, _1, _2);
             server.setCallback(f);
@@ -705,34 +705,34 @@ namespace autobot {
             // Create all the publishers
             // Image publishers
             image_transport::ImageTransport it_zed(nh);
-            pub_rgb = it_zed.advertise(rgb_topic, 1); //rgb
-            NODELET_INFO_STREAM("Advertized on topic " << rgb_topic);
-            pub_raw_rgb = it_zed.advertise(rgb_raw_topic, 1); //rgb raw
-            NODELET_INFO_STREAM("Advertized on topic " << rgb_raw_topic);
+            //pub_rgb = it_zed.advertise(rgb_topic, 1); //rgb
+            //NODELET_INFO_STREAM("Advertized on topic " << rgb_topic);
+            //pub_raw_rgb = it_zed.advertise(rgb_raw_topic, 1); //rgb raw
+            //NODELET_INFO_STREAM("Advertized on topic " << rgb_raw_topic);
             pub_left = it_zed.advertise(left_topic, 1); //left
             NODELET_INFO_STREAM("Advertized on topic " << left_topic);
-            pub_raw_left = it_zed.advertise(left_raw_topic, 1); //left raw
-            NODELET_INFO_STREAM("Advertized on topic " << left_raw_topic);
+            //pub_raw_left = it_zed.advertise(left_raw_topic, 1); //left raw
+            //NODELET_INFO_STREAM("Advertized on topic " << left_raw_topic);
             pub_right = it_zed.advertise(right_topic, 1); //right
             NODELET_INFO_STREAM("Advertized on topic " << right_topic);
-            pub_raw_right = it_zed.advertise(right_raw_topic, 1); //right raw
-            NODELET_INFO_STREAM("Advertized on topic " << right_raw_topic);
-            pub_depth = it_zed.advertise(depth_topic, 1); //depth
-            NODELET_INFO_STREAM("Advertized on topic " << depth_topic);
+            //pub_raw_right = it_zed.advertise(right_raw_topic, 1); //right raw
+            //NODELET_INFO_STREAM("Advertized on topic " << right_raw_topic);
+            //pub_depth = it_zed.advertise(depth_topic, 1); //depth
+            //NODELET_INFO_STREAM("Advertized on topic " << depth_topic);
 
             ////PointCloud publisher
             //pub_cloud = nh.advertise<sensor_msgs::PointCloud2> (point_cloud_topic, 1);
             //NODELET_INFO_STREAM("Advertized on topic " << point_cloud_topic);
 
             // Camera info publishers
-            pub_rgb_cam_info = nh.advertise<sensor_msgs::CameraInfo>(rgb_cam_info_topic, 1); //rgb
-            NODELET_INFO_STREAM("Advertized on topic " << rgb_cam_info_topic);
+            //pub_rgb_cam_info = nh.advertise<sensor_msgs::CameraInfo>(rgb_cam_info_topic, 1); //rgb
+            //NODELET_INFO_STREAM("Advertized on topic " << rgb_cam_info_topic);
             pub_left_cam_info = nh.advertise<sensor_msgs::CameraInfo>(left_cam_info_topic, 1); //left
             NODELET_INFO_STREAM("Advertized on topic " << left_cam_info_topic);
             pub_right_cam_info = nh.advertise<sensor_msgs::CameraInfo>(right_cam_info_topic, 1); //right
             NODELET_INFO_STREAM("Advertized on topic " << right_cam_info_topic);
-            pub_depth_cam_info = nh.advertise<sensor_msgs::CameraInfo>(depth_cam_info_topic, 1); //depth
-            NODELET_INFO_STREAM("Advertized on topic " << depth_cam_info_topic);
+            //pub_depth_cam_info = nh.advertise<sensor_msgs::CameraInfo>(depth_cam_info_topic, 1); //depth
+            //NODELET_INFO_STREAM("Advertized on topic " << depth_cam_info_topic);
 
             //Odometry publisher
             //pub_odom = nh.advertise<nav_msgs::Odometry>(odometry_topic, 1);
