@@ -195,6 +195,15 @@ add_executable(${PROJECT_NAME}_zed src/zed_wrapper_node.cpp)
 target_link_libraries(${PROJECT_NAME}_zed ${PROJECT_NAME} ${LINK_LIBRARIES})
 add_dependencies(${PROJECT_NAME}_zed ${PROJECT_NAME}_gencfg)
 
+file(GLOB_RECURSE odj_detector_sources /media/ubuntu/SSD/jetson-inference/*)
+#file(GLOB odj_detector_sources src/cuda/*.cu)
+file(GLOB odj_detector_includes src/cuda/*.h )
+
+cuda_add_library(obj_detector_cuda ${odj_detector_sources})
+
+cuda_add_executable(obj_detector src/obj_detector.cpp ${odj_detector_sources})
+target_link_libraries(obj_detector nvcaffe_parser nvinfer jetson-inference obj_detector_cuda)
+
 ###############################################################################
 
 ## Rename C++ executable without prefix
@@ -249,12 +258,14 @@ add_dependencies(${PROJECT_NAME}_zed ${PROJECT_NAME}_gencfg)
 
 #Add all files in subdirectories of the project in
 # a dummy_target so qtcreator have access to all files
-FILE(GLOB_RECURSE extra_files ${CMAKE_SOURCE_DIR}/*)
-add_custom_target(dummy_${PROJECT_NAME} SOURCES ${extra_files})
+# FILE(GLOB_RECURSE extra_files ${CMAKE_SOURCE_DIR}/*)
+# add_custom_target(dummy_${PROJECT_NAME} SOURCES ${extra_files})
 
 install(TARGETS
   autobot
   autobot_zed
+  obj_detector
+  obj_detector_cuda
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
