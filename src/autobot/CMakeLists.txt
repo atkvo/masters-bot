@@ -5,6 +5,14 @@ project(autobot)
 # add_definitions(-std=c++11)
 
 find_package(ZED 2.0 REQUIRED)
+find_package(jetson-inference REQUIRED)
+#find_package(Qt5Gui REQUIRED)
+#find_package(Qt5Widgets REQUIRED)
+#find_package(Qt5Core REQUIRED)
+find_package(Qt4 REQUIRED)
+
+include(${QT_USE_FILE})
+add_definitions(${QT_DEFINITIONS})
 
 SET(OCV_VERSION "3.2")
 SET(CUDA_VERSION "8.0")
@@ -28,6 +36,7 @@ find_package(catkin REQUIRED COMPONENTS
   dynamic_reconfigure 
   tf2_ros
   nodelet
+  cv_bridge
 )
 
 #  amcl
@@ -131,7 +140,7 @@ generate_dynamic_reconfigure_options(
 catkin_package(
   # INCLUDE_DIRS include
   LIBRARIES autobot
-  CATKIN_DEPENDS roscpp rospy sensor_msgs std_msgs geometry_msgs rosconsole image_transport dynamic_reconfigure tf2_ros
+  CATKIN_DEPENDS roscpp rospy sensor_msgs std_msgs geometry_msgs rosconsole image_transport dynamic_reconfigure tf2_ros cv_bridge
   #DEPENDS system_lib 
 )
 
@@ -195,14 +204,12 @@ add_executable(${PROJECT_NAME}_zed src/zed_wrapper_node.cpp)
 target_link_libraries(${PROJECT_NAME}_zed ${PROJECT_NAME} ${LINK_LIBRARIES})
 add_dependencies(${PROJECT_NAME}_zed ${PROJECT_NAME}_gencfg)
 
-file(GLOB_RECURSE odj_detector_sources /media/ubuntu/SSD/jetson-inference/*)
-#file(GLOB odj_detector_sources src/cuda/*.cu)
-file(GLOB odj_detector_includes src/cuda/*.h )
+#file(GLOB_RECURSE odj_detector_sources /media/ubuntu/SSD/jetson-inference/*.cu /media/ubuntu/SSD/jetson-inference/*.cpp /media/ubuntu/SSD/jetson-inference/*.h)
 
-cuda_add_library(obj_detector_cuda ${odj_detector_sources})
+#cuda_add_library(obj_detector_cuda ${odj_detector_sources})
 
-cuda_add_executable(obj_detector src/obj_detector.cpp ${odj_detector_sources})
-target_link_libraries(obj_detector nvcaffe_parser nvinfer jetson-inference obj_detector_cuda)
+cuda_add_executable(obj_detector src/obj_detector.cpp)
+target_link_libraries(obj_detector nvcaffe_parser nvinfer jetson-inference ${LINK_LIBRARIES} ${QT_LIBRARIES})
 
 ###############################################################################
 
@@ -264,8 +271,8 @@ target_link_libraries(obj_detector nvcaffe_parser nvinfer jetson-inference obj_d
 install(TARGETS
   autobot
   autobot_zed
-  obj_detector
-  obj_detector_cuda
+#  obj_detector
+#  obj_detector_cuda
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
