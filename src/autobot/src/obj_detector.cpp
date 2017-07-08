@@ -35,14 +35,18 @@ bool signal_recieved = false;
 	//}
 //}
 
-static const std::string OPENCV_WINDOW = "Image window";
+static const std::string OPENCV_WINDOW = "Image post bridge conversion";
+static const std::string OPENCV_WINDOW2 = "Image post bit depth conversion";
+static const std::string OPENCV_WINDOW3 = "Image post color conversion";
+static const std::string OPENCV_WINDOW4 = "Image window";
 
 class ImageConverter
 {
 	ros::NodeHandle nh_;
 	image_transport::ImageTransport it_;
 	image_transport::Subscriber image_sub_;
-
+    cv::Mat cv_im;
+    cv_bridge::CvImagePtr cv_ptr;
 
 
 	float confidence = 0.0f;
@@ -72,6 +76,9 @@ public:
 		  &ImageConverter::imageCb, this);
 
 		cv::namedWindow(OPENCV_WINDOW);
+		cv::namedWindow(OPENCV_WINDOW2);
+		cv::namedWindow(OPENCV_WINDOW3);
+		cv::namedWindow(OPENCV_WINDOW4);
 		cout << "Named a window" << endl;
 
 		/*
@@ -85,6 +92,10 @@ public:
 			printf("obj_detect:   failed to initialize imageNet\n");
 
 		}
+        
+        maxBoxes = net->GetMaxBoundingBoxes();
+		printf("maximum bounding boxes:  %u\n", maxBoxes);
+		classes  = net->GetNumClasses();
 
 
 		/*
@@ -114,13 +125,20 @@ public:
 
 	void imageCb(const sensor_msgs::ImageConstPtr& msg)
 	{
-		cv::Mat cv_im;
+
 		try
 		{
-			cv_im = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8)->image;
+			cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
+			cv_im = cv_ptr->image;
+            cv::imshow(OPENCV_WINDOW, cv_im);
 			cv_im.convertTo(cv_im,CV_32FC3);
+			//ROS_INFO("Image width %d height %d", cv_im.cols, cv_im.rows);
+            cv::imshow(OPENCV_WINDOW2, cv_im);
+
 			// convert color
 			cv::cvtColor(cv_im,cv_im,CV_BGR2RGBA);
+            cv::imshow(OPENCV_WINDOW3, cv_im);
+
 		}
 		catch (cv_bridge::Exception& e)
 		{
@@ -129,13 +147,27 @@ public:
 		}
 
 
+        // allocate GPU data if necessary
+        if(!gpu_data){
+            ROS_INFO("first allocation");
+            CUDA(cudaMalloc(&gpu_data, cv_im.rows*cv_im.cols * sizeof(float4)));
+        }else if(imgHeight != cv_im.rows || imgWidth != cv_im.cols){
+            ROS_INFO("re allocation");
+            // reallocate for a new image size if necessary
+            CUDA(cudaFree(gpu_data));
+            CUDA(cudaMalloc(&gpu_data, cv_im.rows*cv_im.cols * sizeof(float4)));
+        }
+        //ROS_INFO("allocation done");
+
 		imgHeight = cv_im.rows;
 		imgWidth = cv_im.cols;
 		imgSize = cv_im.rows*cv_im.cols * sizeof(float4);
 		float4* cpu_data = (float4*)(cv_im.data);
 
+        //ROS_INFO("cuda memcpy begin");
 		// copy to device
 		CUDA(cudaMemcpy(gpu_data, cpu_data, imgSize, cudaMemcpyHostToDevice));
+        //ROS_INFO("cuda memcpy end");
 
 		//void* imgCPU  = NULL;
 		void* imgCUDA = NULL;
@@ -143,6 +175,9 @@ public:
 
 		// classify image with detectNet
 		int numBoundingBoxes = maxBoxes;
+
+        //ROS_INFO("parameters gpu_data: %p imgWidth: %d imgHeight: %d bbCPU: %p numBB pointer: %p numBB: %d",gpu_data, imgWidth, imgHeight,bbCPU, &numBoundingBoxes, numBoundingBoxes);
+
 
 		if( net->Detect((float*)gpu_data, imgWidth, imgHeight, bbCPU, &numBoundingBoxes, confCPU))
 		{
@@ -192,9 +227,10 @@ public:
 		}
 
 
-		// update display
+		// update image back to original
 
-
+        cv_im.convertTo(cv_im,CV_8UC3);
+        cv::cvtColor(cv_im,cv_im,CV_RGBA2BGR);
 
 
 
@@ -203,9 +239,13 @@ public:
 		if (cv_im.rows > 60 && cv_im.cols > 60)
 		  cv::circle(cv_im, cv::Point(50, 50), 10, CV_RGB(255,0,0));
 
-
+        // test image
+        cv::String filepath = "/home/ubuntu/Desktop/dog.jpg";
+        cv::Mat testpic = cv::imread(filepath);
 		// Update GUI Window
-		cv::imshow(OPENCV_WINDOW, cv_im);
+        cv::imshow(OPENCV_WINDOW4, cv_im);
+		//cv::imshow(OPENCV_WINDOW, cv_im);
+		//cv::imshow(OPENCV_WINDOW, testpic);
 		cv::waitKey(3);
 
 	}
