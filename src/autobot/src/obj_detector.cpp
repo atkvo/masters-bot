@@ -20,8 +20,9 @@
 #include <jetson-inference/detectNet.h>
 
 
-#define DEFAULT_CAMERA -1	// -1 for onboard camera, or change to index of /dev/video V4L2 camera (>=0)	
-		
+#define DEFAULT_CAMERA -1	// -1 for onboard camera, or change to index of /dev/video V4L2 camera (>=0)
+
+using namespace std;
 
 bool signal_recieved = false;
 
@@ -45,7 +46,7 @@ class ImageConverter
 
 
 	float confidence = 0.0f;
-	
+
 
 	float* bbCPU    = NULL;
 	float* bbCUDA   = NULL;
@@ -54,33 +55,35 @@ class ImageConverter
 
 	detectNet* net = NULL;
 	uint32_t maxBoxes = 0;
-	uint32_t classes = 0; 
-	
+	uint32_t classes = 0;
+
 	float4* gpu_data = NULL;
 
 	uint32_t imgWidth;
 	uint32_t imgHeight;
 	size_t imgSize;
-	
+
 public:
-	ImageConverter(int argc, char** argv ): it_(nh_)
+	ImageConverter(int argc, char** argv ) : it_(nh_)
 	{
+		cout << "start constructor" << endl;
 		// Subscrive to input video feed and publish output video feed
-		image_sub_ = it_.subscribe("/camera/image_raw", 1,
+		image_sub_ = it_.subscribe("/left/image_rect_color", 1,
 		  &ImageConverter::imageCb, this);
 
 		cv::namedWindow(OPENCV_WINDOW);
-
+		cout << "Named a window" << endl;
 
 		/*
 		 * create detectNet
 		 */
 		net = detectNet::Create(argc, argv);
+		cout << "Created DetectNet" << endl;
 
 		if( !net )
 		{
 			printf("obj_detect:   failed to initialize imageNet\n");
-			
+
 		}
 
 
@@ -92,12 +95,16 @@ public:
 			!cudaAllocMapped((void**)&confCPU, (void**)&confCUDA, maxBoxes * classes * sizeof(float)) )
 		{
 			printf("detectnet-console:  failed to alloc output memory\n");
-			
-		} 
-		
-		maxBoxes = net->GetMaxBoundingBoxes();		
+
+		}
+		cout << "Allocated CUDA mem" << endl;
+
+
+		maxBoxes = net->GetMaxBoundingBoxes();
 		printf("maximum bounding boxes:  %u\n", maxBoxes);
 		classes  = net->GetNumClasses();
+		cout << "Constructor operations complete" << endl;
+
 	}
 
 	~ImageConverter()
@@ -120,8 +127,8 @@ public:
 		  ROS_ERROR("cv_bridge exception: %s", e.what());
 		  return;
 		}
-		
-		
+
+
 		imgHeight = cv_im.rows;
 		imgWidth = cv_im.cols;
 		imgSize = cv_im.rows*cv_im.cols * sizeof(float4);
@@ -136,58 +143,58 @@ public:
 
 		// classify image with detectNet
 		int numBoundingBoxes = maxBoxes;
-	
+
 		if( net->Detect((float*)gpu_data, imgWidth, imgHeight, bbCPU, &numBoundingBoxes, confCPU))
 		{
 			printf("%i bounding boxes detected\n", numBoundingBoxes);
-		
+
 			int lastClass = 0;
 			int lastStart = 0;
-			
+
 			for( int n=0; n < numBoundingBoxes; n++ )
 			{
 				const int nc = confCPU[n*2+1];
 				float* bb = bbCPU + (n * 4);
-				
-				printf("bounding box %i   (%f, %f)  (%f, %f)  w=%f  h=%f\n", n, bb[0], bb[1], bb[2], bb[3], bb[2] - bb[0], bb[3] - bb[1]); 
+
+				printf("bounding box %i   (%f, %f)  (%f, %f)  w=%f  h=%f\n", n, bb[0], bb[1], bb[2], bb[3], bb[2] - bb[0], bb[3] - bb[1]);
 				//cv::rectangle(cv_im, Rect rec, Scalar( rand()&255, rand()&255, rand()&255 ),1, LINE_8, 0 )
 
-				
+
 				//if( nc != lastClass || n == (numBoundingBoxes - 1) )
 				//{
 					//if( !net->DrawBoxes((float*)gpu_data, (float*)gpu_data, imgWidth, imgHeight,
 						                        //bbCUDA + (lastStart * 4), (n - lastStart) + 1, lastClass) )
 						//printf("detectnet-console:  failed to draw boxes\n");
-					
-					
+
+
 					//lastClass = nc;
 					//lastStart = n;
 
 					////CUDA(cudaDeviceSynchronize());
 				//}
 			}
-		
+
 			/*if( font != NULL )
 			{
 				char str[256];
 				sprintf(str, "%05.2f%% %s", confidence * 100.0f, net->GetClassDesc(img_class));
-				
+
 				font->RenderOverlay((float4*)imgRGBA, (float4*)imgRGBA, camera->GetWidth(), camera->GetHeight(),
 								    str, 10, 10, make_float4(255.0f, 255.0f, 255.0f, 255.0f));
 			}*/
-			
+
 
 			char str[256];
 			sprintf(str, "TensorRT build %x | %s | %04.1f FPS", NV_GIE_VERSION, net->HasFP16() ? "FP16" : "FP32", -1.0);
 			//sprintf(str, "GIE build %x | %s | %04.1f FPS | %05.2f%% %s", NV_GIE_VERSION, net->GetNetworkName(), display->GetFPS(), confidence * 100.0f, net->GetClassDesc(img_class));
 			cv::setWindowTitle(OPENCV_WINDOW, str);
 
-		}	
+		}
 
 
 		// update display
-		
-	
+
+
 
 
 
@@ -205,17 +212,20 @@ public:
 };
 
 int main( int argc, char** argv ) {
+	cout << "starting node" << endl;
 	printf("obj_detect\n  args (%i):  ", argc);
 
-	ros::init(argc, argv, "image_converter");
-	ImageConverter ic(argc, argv);
+	ros::init(argc, argv, "obj_detector");
+    ros::NodeHandle nh;
 
 
 	for( int i=0; i < argc; i++ )
 		printf("%i [%s]  ", i, argv[i]);
-		
+
 	printf("\n\n");
-	
+
+	ImageConverter ic(argc, argv);
+
 
 	/*
 	 * parse network type from CLI arguments
@@ -231,7 +241,7 @@ int main( int argc, char** argv ) {
 		else if( strcmp(argv[1], "facenet") == 0 || strcmp(argv[1], "facenet-120") == 0 || strcmp(argv[1], "face-120") == 0 )
 			networkType = detectNet::FACENET;
 	}*/
-	
+
 	//if( signal(SIGINT, sig_handler) == SIG_ERR )
 		//printf("\ncan't catch SIGINT\n");
 
@@ -240,21 +250,21 @@ int main( int argc, char** argv ) {
 	 * create the camera device
 	 */
 	//gstCamera* camera = gstCamera::Create(DEFAULT_CAMERA);
-	
+
 	//if( !camera )
 	//{
 		//printf("\ndetectnet-camera:  failed to initialize video device\n");
 		//return 0;
 	//}
-	
+
 	//printf("\ndetectnet-camera:  successfully initialized video device\n");
 	//printf("    width:  %u\n", camera->GetWidth());
 	//printf("   height:  %u\n", camera->GetHeight());
 	//printf("    depth:  %u (bpp)\n\n", camera->GetPixelDepth());
-	
 
 
-	
+
+
 	ros::spin();
 
 	return 0;

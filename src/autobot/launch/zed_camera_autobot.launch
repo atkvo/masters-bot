@@ -3,9 +3,10 @@
   <arg name="zed_id"/>
 
   <include file="$(find autobot)/launch/zed_tf.launch" />
-  <node name="autobot_zed" pkg="autobot" type="autobot_zed" output="screen" launch-prefix="xterm -e gdb --args">
+  
+  <node name="autobot_zed" pkg="autobot" type="autobot_zed" output="screen">
 
-    <!-- SVO file path -->
+   <!-- SVO file path -->
     <!-- param name="svo_filepath" value="$(arg svo_file)" /-->
 
     <!-- ZED parameters -->

@@ -20,6 +20,7 @@ SET(CUDA_USE_STATIC_CUDA_RUNTIME OFF)
 find_package(OpenCV ${OCV_VERSION} COMPONENTS core highgui imgproc REQUIRED)
 find_package(CUDA ${CUDA_VERSION} REQUIRED)
 
+
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
@@ -42,7 +43,7 @@ find_package(catkin REQUIRED COMPONENTS
 #  amcl
 #  navigation
 ## System dependencies are found with CMake's conventions
-# find_package(Boost REQUIRED COMPONENTS system thread)
+find_package(Boost REQUIRED COMPONENTS system thread)
 
 
 ## Uncomment this if the package has a setup.py. This macro ensures
