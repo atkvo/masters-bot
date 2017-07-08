@@ -13,6 +13,7 @@
 #include <stdio.h>
 #include <signal.h>
 #include <unistd.h>
+#include <chrono>
 #include <jetson-inference/cudaMappedMemory.h>
 #include <jetson-inference/cudaNormalize.h>
 #include <jetson-inference/cudaFont.h>
@@ -47,7 +48,7 @@ class ImageConverter
 	image_transport::Subscriber image_sub_;
     cv::Mat cv_im;
     cv_bridge::CvImagePtr cv_ptr;
-
+    std::chrono::steady_clock::time_point prev;
 
 	float confidence = 0.0f;
 
@@ -76,10 +77,12 @@ public:
 		  &ImageConverter::imageCb, this);
 
 		cv::namedWindow(OPENCV_WINDOW);
-		cv::namedWindow(OPENCV_WINDOW2);
-		cv::namedWindow(OPENCV_WINDOW3);
-		cv::namedWindow(OPENCV_WINDOW4);
+		//cv::namedWindow(OPENCV_WINDOW2);
+		//cv::namedWindow(OPENCV_WINDOW3);
+		//cv::namedWindow(OPENCV_WINDOW4);
 		cout << "Named a window" << endl;
+
+        prev = std::chrono::steady_clock::now();
 
 		/*
 		 * create detectNet
@@ -130,14 +133,14 @@ public:
 		{
 			cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
 			cv_im = cv_ptr->image;
-            cv::imshow(OPENCV_WINDOW, cv_im);
+            //cv::imshow(OPENCV_WINDOW, cv_im);
 			cv_im.convertTo(cv_im,CV_32FC3);
 			//ROS_INFO("Image width %d height %d", cv_im.cols, cv_im.rows);
-            cv::imshow(OPENCV_WINDOW2, cv_im);
+            //cv::imshow(OPENCV_WINDOW2, cv_im);
 
 			// convert color
 			cv::cvtColor(cv_im,cv_im,CV_BGR2RGBA);
-            cv::imshow(OPENCV_WINDOW3, cv_im);
+            //cv::imshow(OPENCV_WINDOW3, cv_im);
 
 		}
 		catch (cv_bridge::Exception& e)
@@ -181,7 +184,7 @@ public:
 
 		if( net->Detect((float*)gpu_data, imgWidth, imgHeight, bbCPU, &numBoundingBoxes, confCPU))
 		{
-			printf("%i bounding boxes detected\n", numBoundingBoxes);
+			//printf("%i bounding boxes detected\n", numBoundingBoxes);
 
 			int lastClass = 0;
 			int lastStart = 0;
@@ -192,6 +195,7 @@ public:
 				float* bb = bbCPU + (n * 4);
 
 				printf("bounding box %i   (%f, %f)  (%f, %f)  w=%f  h=%f\n", n, bb[0], bb[1], bb[2], bb[3], bb[2] - bb[0], bb[3] - bb[1]);
+                cv::rectangle( cv_im, cv::Point( bb[0], bb[1] ), cv::Point( bb[2], bb[3]), cv::Scalar( 255, 55, 0 ), +1, 4 );
 				//cv::rectangle(cv_im, Rect rec, Scalar( rand()&255, rand()&255, rand()&255 ),1, LINE_8, 0 )
 
 
@@ -218,9 +222,15 @@ public:
 								    str, 10, 10, make_float4(255.0f, 255.0f, 255.0f, 255.0f));
 			}*/
 
+            //std::stringstream fps;
+            
+            std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
+            float fps = 1000.0 / std::chrono::duration_cast<std::chrono::milliseconds>(now - prev).count() ;
 
+            prev = now;
+            
 			char str[256];
-			sprintf(str, "TensorRT build %x | %s | %04.1f FPS", NV_GIE_VERSION, net->HasFP16() ? "FP16" : "FP32", -1.0);
+			sprintf(str, "TensorRT build %x | %s | %04.1f FPS", NV_GIE_VERSION, net->HasFP16() ? "FP16" : "FP32", fps);
 			//sprintf(str, "GIE build %x | %s | %04.1f FPS | %05.2f%% %s", NV_GIE_VERSION, net->GetNetworkName(), display->GetFPS(), confidence * 100.0f, net->GetClassDesc(img_class));
 			cv::setWindowTitle(OPENCV_WINDOW, str);
 
@@ -236,14 +246,14 @@ public:
 
 
 		// Draw an example circle on the video stream
-		if (cv_im.rows > 60 && cv_im.cols > 60)
-		  cv::circle(cv_im, cv::Point(50, 50), 10, CV_RGB(255,0,0));
+		//if (cv_im.rows > 60 && cv_im.cols > 60)
+		  //cv::circle(cv_im, cv::Point(50, 50), 10, CV_RGB(255,0,0));
 
         // test image
         cv::String filepath = "/home/ubuntu/Desktop/dog.jpg";
         cv::Mat testpic = cv::imread(filepath);
 		// Update GUI Window
-        cv::imshow(OPENCV_WINDOW4, cv_im);
+        cv::imshow(OPENCV_WINDOW, cv_im);
 		//cv::imshow(OPENCV_WINDOW, cv_im);
 		//cv::imshow(OPENCV_WINDOW, testpic);
 		cv::waitKey(3);
