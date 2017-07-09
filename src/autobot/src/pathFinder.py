@@ -45,7 +45,7 @@ def HandleTogglePathFinderService(req):
     """
     global PathConfig
     PathConfig.enabled = req.state
-    return TogglePathFinder(True)
+    return TogglePathFinderResponse(True)
 
 
 def HandleAdjustWallDist(req):
