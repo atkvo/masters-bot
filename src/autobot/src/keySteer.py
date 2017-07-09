@@ -7,7 +7,7 @@ from autobot.srv import *
 import curses
 
 """
-TODO: 
+TODO:
 - [ ] Update UI to show wall hug status
 - [ ] Create menu boxes
 """
@@ -32,6 +32,16 @@ stdscr.addstr(2, 14, "VELOCITY")
 stdscr.addstr(3, 14, "ANGLE   ")
 
 
+def srvTogglePathFinder(state):
+    try:
+        rospy.wait_for_service('togglePathFinder', timeout=0.2)
+        srv = rospy.ServiceProxy('togglePathFinder', TogglePathFinder)
+        srv(state)  # ignore ACK response
+    except rospy.ROSException, e:
+        # print "Service called failed: %s" % e
+        pass
+
+
 def modVelocity(incr):
     global velocity
     velocity = velocity + incr
@@ -42,6 +52,7 @@ def zeroVelocity():
     global velocity
     velocity = 0
     stdscr.addstr(2, 25, '%.2f' % velocity)
+    srvTogglePathFinder(False)
 
 
 def modAngle(incr):
@@ -57,16 +68,17 @@ def zeroAngle():
 
 
 def setWallDist(wall, dist):
-    rospy.wait_for_service('adjustWallDist')
     try:
+        rospy.wait_for_service('adjustWallDist')
         adjustWall = rospy.ServiceProxy('adjustWallDist', AdjustWallDist)
         cmd = wall_dist()
         cmd.wall = wall
         cmd.dist = dist
         resp = adjustWall(cmd)
         return resp
-    except rospy.ServiceException, e:
-        print "Service called failed: %s" % e
+    except rospy.ROSException, e:
+        # print "Service called failed: %s" % e
+        pass
 
 
 def main():
@@ -120,6 +132,8 @@ def main():
             setWallDist(autobot.msg.wall_dist.WALL_RIGHT, 0.5)
         elif key == ord('l'):
             setWallDist(autobot.msg.wall_dist.WALL_LEFT, 0.5)
+        elif key == ord('t'):
+            srvTogglePathFinder(True)
 
     curses.endwin()
 
