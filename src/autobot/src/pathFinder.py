@@ -6,8 +6,7 @@ from autobot.msg import drive_param
 from sensor_msgs.msg import LaserScan
 from autobot.msg import pid_input
 from autobot.msg import wall_dist
-from autobot.srv import AdjustWallDist
-from autobot.srv import TogglePathFinder
+from autobot.srv import *
 
 """
 TODO:
