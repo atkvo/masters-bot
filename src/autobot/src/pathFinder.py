@@ -7,6 +7,7 @@ from sensor_msgs.msg import LaserScan
 from autobot.msg import pid_input
 from autobot.msg import wall_dist
 from autobot.srv import AdjustWallDist
+from autobot.srv import TogglePathFinder
 
 """
 TODO:
@@ -32,10 +33,20 @@ class PathConfig(object):
     minFrontDist = 2.2       # minimum required distance in front of car
     velocity = 7.3           # velocity of drive
     pubRate = 0              # publish rate of node
+    enabled = True           # enable/disable state of wall hugging
 
 
 errorPub = rospy.Publisher('error', pid_input, queue_size=10)
 motorPub = rospy.Publisher('drive_parameters', drive_param, queue_size=10)
+
+
+def HandleTogglePathFinderService(req):
+    """ Handler for enabling/disabling path finder
+    Responds with ack msg (bool)
+    """
+    global PathConfig
+    PathConfig.enabled = req.state
+    return TogglePathFinder(True)
 
 
 def HandleAdjustWallDist(req):
@@ -87,6 +98,10 @@ def getRange(data, theta):
 
 def callback(data):
     global PathConfig
+
+    # Do not attempt to hug wall if disabled
+    if PathConfig.enabled is False:
+        return
 
     frontDistance = getRange(data, 90)
 
@@ -185,6 +200,8 @@ def callback(data):
 if __name__ == '__main__':
     print("Path finding node started")
     rospy.Service('adjustWallDist', AdjustWallDist, HandleAdjustWallDist)
+    rospy.Service('togglePathFinder', TogglePathFinder,
+                  HandleTogglePathFinderService)
     rospy.init_node('pathFinder', anonymous=True)
     rospy.Subscriber("scan", LaserScan, callback)
     rospy.spin()
