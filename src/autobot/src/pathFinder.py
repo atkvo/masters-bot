@@ -33,7 +33,7 @@ class PathConfig(object):
     minFrontDist = 2.2       # minimum required distance in front of car
     velocity = 7.3           # velocity of drive
     pubRate = 0              # publish rate of node
-    enabled = True           # enable/disable state of wall hugging
+    enabled = False           # enable/disable state of wall hugging
 
 
 errorPub = rospy.Publisher('error', pid_input, queue_size=10)
