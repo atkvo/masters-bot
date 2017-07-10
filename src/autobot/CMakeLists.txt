@@ -83,12 +83,15 @@ add_message_files(
   drive_values.msg
   drive_param.msg
   pid_input.msg
+  wall_dist.msg
+  pathFinderState.msg
 )
 
 ## Generate services in the 'srv' folder
 add_service_files(
   FILES
   AdjustWallDist.srv
+  TogglePathFinder.srv
 )
 
 ## Generate actions in the 'action' folder
