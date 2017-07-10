@@ -6,6 +6,7 @@ from autobot.msg import drive_param
 from sensor_msgs.msg import LaserScan
 from autobot.msg import pid_input
 from autobot.msg import wall_dist
+from autobot.msg import pathFinderState
 from autobot.srv import *
 
 """
@@ -37,6 +38,7 @@ class PathConfig(object):
 
 errorPub = rospy.Publisher('error', pid_input, queue_size=10)
 motorPub = rospy.Publisher('drive_parameters', drive_param, queue_size=10)
+statePub = rospy.Publisher('pathFinderStatus', pathFinderState, queue_size=10)
 
 
 def HandleTogglePathFinderService(req):
@@ -75,6 +77,17 @@ def HandleAdjustWallDist(req):
     resp.wall = PathConfig.wallToWatch
     resp.dist = PathConfig.desiredTrajectory
     return AdjustWallDistResponse(resp, isValid)
+
+
+def publishCurrentState(event):
+    global PathConfig
+
+    msg = pathFinderState()
+    msg.velocity = PathConfig.velocity
+    msg.hug.wall = PathConfig.wallToWatch
+    msg.hug.dist = PathConfig.desiredTrajectory
+    msg.enabled = PathConfig.enabled
+    statePub.publish(msg)
 
 
 def getRange(data, theta):
@@ -203,4 +216,5 @@ if __name__ == '__main__':
                   HandleTogglePathFinderService)
     rospy.init_node('pathFinder', anonymous=True)
     rospy.Subscriber("scan", LaserScan, callback)
+    rospy.Timer(rospy.Duration(0.5), callback=publishCurrentState)
     rospy.spin()
