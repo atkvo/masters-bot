@@ -25,11 +25,21 @@ stdscr.keypad(1)
 
 stdscr.refresh()
 
-stdscr.addstr(0, 5, "AUTOBOT CONTROL - \
-Use WASD to steer (hold shift to increase ratio)")
 
-stdscr.addstr(2, 14, "VELOCITY")
-stdscr.addstr(3, 14, "ANGLE   ")
+def drawGreeter():
+    global stdscr
+    stdscr.addstr(0, 5, "AUTOBOT CONTROL")
+
+    stdscr.addstr(2, 5, "VELOCITY")
+    stdscr.addstr(3, 5, "ANGLE   ")
+
+    stdscr.addstr(1, 38, "| WASD  - steer. (shift to increase ratio)")
+    stdscr.addstr(2, 38, "| Space - stop (Overrides pathfinder)")
+    stdscr.addstr(3, 38, "| c     - center wheels")
+    stdscr.addstr(4, 38, "| l     - hug left wall")
+    stdscr.addstr(5, 38, "| r     - hug right wall")
+    stdscr.addstr(6, 38, "| t     - toggle pathFinder enable state")
+    stdscr.addstr(7, 38, "| q     - quit")
 
 
 def srvTogglePathFinder(state):
@@ -84,6 +94,7 @@ def setWallDist(wall, dist):
 def main():
     rospy.init_node('keyboardSteer', anonymous=True)
     drivePub = rospy.Publisher('drive_parameters', drive_param, queue_size=10)
+    drawGreeter()
     key = ''
     while key != ord('q'):
         keyPressed = False
