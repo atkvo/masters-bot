@@ -111,6 +111,16 @@ def convertWallToString(wall):
         return "Unknown"
 
 
+def driveParamsUpdated(driveParam):
+    global stdscr
+    global velocity
+    global steerAngle
+    velocity = driveParam.velocity
+    steerAngle = driveParam.angle
+    stdscr.addstr(4, 5, "VELOCITY : {:3.2}".format(driveParam.velocity))
+    stdscr.addstr(5, 5, "ANGLE    : {:3.2}".format(driveParam.angle))
+
+
 def pathFinderUpdated(status):
     global stdscr
     stdscr.addstr(4, 5, "VELOCITY :")
@@ -186,4 +196,5 @@ def main():
 
 if __name__ == '__main__':
     rospy.Subscriber("pathFinderStatus", pathFinderState, pathFinderUpdated)
+    rospy.Subscriber("drive_parameters", drive_param, driveParamsUpdated)
     main()
