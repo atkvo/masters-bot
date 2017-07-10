@@ -33,12 +33,12 @@ def drawGreeter():
     stdscr.addstr(2, 5, "VELOCITY")
     stdscr.addstr(3, 5, "ANGLE   ")
 
-    stdscr.addstr(1, 38, "| WASD  - steer. (shift to increase ratio)")
-    stdscr.addstr(2, 38, "| Space - stop (Overrides pathfinder)")
+    stdscr.addstr(1, 38, "| WASD  - steer. (hold shift to increase ratio)")
+    stdscr.addstr(2, 38, "| Space - stop (disables pathfinder)")
     stdscr.addstr(3, 38, "| c     - center wheels")
     stdscr.addstr(4, 38, "| l     - hug left wall")
     stdscr.addstr(5, 38, "| r     - hug right wall")
-    stdscr.addstr(6, 38, "| t     - toggle pathFinder enable state")
+    stdscr.addstr(6, 38, "| t     - turn on pathFinder")
     stdscr.addstr(7, 38, "| q     - quit")
 
 
