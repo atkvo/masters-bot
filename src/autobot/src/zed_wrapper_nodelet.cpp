@@ -267,17 +267,17 @@ namespace autobot {
          * \param depth_frame_id : the id of the reference frame of the depth image
          * \param t : the ros::Time to stamp the depth image
          */
-        //void publishDepth(cv::Mat depth, image_transport::Publisher &pub_depth, string depth_frame_id, ros::Time t) {
-            //string encoding;
-            //if (openniDepthMode) {
-                //depth *= 1000.0f;
-                //depth.convertTo(depth, CV_16UC1); // in mm, rounded
-                //encoding = sensor_msgs::image_encodings::TYPE_16UC1;
-            //} else {
-                //encoding = sensor_msgs::image_encodings::TYPE_32FC1;
-            //}
-            //pub_depth.publish(imageToROSmsg(depth, encoding, depth_frame_id, t));
-        //}
+        void publishDepth(cv::Mat depth, image_transport::Publisher &pub_depth, string depth_frame_id, ros::Time t) {
+            string encoding;
+            if (openniDepthMode) {
+                depth *= 1000.0f;
+                depth.convertTo(depth, CV_16UC1); // in mm, rounded
+                encoding = sensor_msgs::image_encodings::TYPE_16UC1;
+            } else {
+                encoding = sensor_msgs::image_encodings::TYPE_32FC1;
+            }
+            pub_depth.publish(imageToROSmsg(depth, encoding, depth_frame_id, t));
+        }
 
         /* \brief Publish a pointCloud with a ros Publisher
          * \param width : the width of the point cloud
@@ -310,7 +310,7 @@ namespace autobot {
             pub_cloud.publish(output);
         }
          */
-         
+
         /* \brief Publish the informations of a camera with a ros Publisher
          * \param cam_info_msg : the information message to publish
          * \param pub_cam_info : the publisher object to use
@@ -415,7 +415,7 @@ namespace autobot {
             //sensor_msgs::CameraInfoPtr rgb_cam_info_msg(new sensor_msgs::CameraInfo());
             sensor_msgs::CameraInfoPtr left_cam_info_msg(new sensor_msgs::CameraInfo());
             sensor_msgs::CameraInfoPtr right_cam_info_msg(new sensor_msgs::CameraInfo());
-            //sensor_msgs::CameraInfoPtr depth_cam_info_msg(new sensor_msgs::CameraInfo());
+            sensor_msgs::CameraInfoPtr depth_cam_info_msg(new sensor_msgs::CameraInfo());
             fillCamInfo(zed.get(), left_cam_info_msg, right_cam_info_msg, left_frame_id, right_frame_id);
             //rgb_cam_info_msg = depth_cam_info_msg = left_cam_info_msg; // the reference camera is the Left one (next to the ZED logo)
 
@@ -551,12 +551,12 @@ namespace autobot {
                         //publishImage(rightImRGB, pub_raw_right, right_frame_id, t);
                     //}
 
-                    // Publish the depth image if someone has subscribed to
-                    //if (depth_SubNumber > 0) {
-                        //zed->retrieveMeasure(depthZEDMat, sl::MEASURE_DEPTH);
-                        //publishCamInfo(depth_cam_info_msg, pub_depth_cam_info, t);
-                        //publishDepth(toCVMat(depthZEDMat), pub_depth, depth_frame_id, t); // in meters
-                    //}
+                     //Publish the depth image if someone has subscribed to
+                    if (depth_SubNumber > 0) {
+                        zed->retrieveMeasure(depthZEDMat, sl::MEASURE_DEPTH);
+                        publishCamInfo(depth_cam_info_msg, pub_depth_cam_info, t);
+                        publishDepth(toCVMat(depthZEDMat), pub_depth, depth_frame_id, t); // in meters
+                    }
 
                     // Publish the point cloud if someone has subscribed to
                     //if (cloud_SubNumber > 0) {
@@ -591,7 +591,8 @@ namespace autobot {
             // Launch file parameters
             resolution = sl::RESOLUTION_HD720;
             quality = sl::DEPTH_MODE_PERFORMANCE;
-            sensing_mode = sl::SENSING_MODE_STANDARD;
+            //sensing_mode = sl::SENSING_MODE_STANDARD;
+            sensing_mode = sl::SENSING_MODE_FILL;
             rate = 30;
             gpu_id = -1;
             zed_id = 0;
@@ -717,8 +718,8 @@ namespace autobot {
             NODELET_INFO_STREAM("Advertized on topic " << right_topic);
             //pub_raw_right = it_zed.advertise(right_raw_topic, 1); //right raw
             //NODELET_INFO_STREAM("Advertized on topic " << right_raw_topic);
-            //pub_depth = it_zed.advertise(depth_topic, 1); //depth
-            //NODELET_INFO_STREAM("Advertized on topic " << depth_topic);
+            pub_depth = it_zed.advertise(depth_topic, 1); //depth
+            NODELET_INFO_STREAM("Advertized on topic " << depth_topic);
 
             ////PointCloud publisher
             //pub_cloud = nh.advertise<sensor_msgs::PointCloud2> (point_cloud_topic, 1);
@@ -731,8 +732,8 @@ namespace autobot {
             NODELET_INFO_STREAM("Advertized on topic " << left_cam_info_topic);
             pub_right_cam_info = nh.advertise<sensor_msgs::CameraInfo>(right_cam_info_topic, 1); //right
             NODELET_INFO_STREAM("Advertized on topic " << right_cam_info_topic);
-            //pub_depth_cam_info = nh.advertise<sensor_msgs::CameraInfo>(depth_cam_info_topic, 1); //depth
-            //NODELET_INFO_STREAM("Advertized on topic " << depth_cam_info_topic);
+            pub_depth_cam_info = nh.advertise<sensor_msgs::CameraInfo>(depth_cam_info_topic, 1); //depth
+            NODELET_INFO_STREAM("Advertized on topic " << depth_cam_info_topic);
 
             //Odometry publisher
             //pub_odom = nh.advertise<nav_msgs::Odometry>(odometry_topic, 1);
