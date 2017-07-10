@@ -3,6 +3,7 @@
 import rospy
 from autobot.msg import drive_param
 from autobot.msg import wall_dist
+from autobot.msg import pathFinderState
 from autobot.srv import *
 import curses
 
@@ -28,18 +29,23 @@ stdscr.refresh()
 
 def drawGreeter():
     global stdscr
-    stdscr.addstr(0, 5, "AUTOBOT CONTROL")
+    stdscr.addstr(0, 5, "AUTOBOT CONSOLE")
 
-    stdscr.addstr(2, 5, "VELOCITY")
-    stdscr.addstr(3, 5, "ANGLE   ")
+    stdscr.addstr(2, 5, "MOTOR STATUS ")
+    stdscr.addstr(3, 5, "----------------")
 
-    stdscr.addstr(1, 38, "| WASD  - steer. (hold shift to increase ratio)")
-    stdscr.addstr(2, 38, "| Space - stop (disables pathfinder)")
-    stdscr.addstr(3, 38, "| c     - center wheels")
-    stdscr.addstr(4, 38, "| l     - hug left wall")
-    stdscr.addstr(5, 38, "| r     - hug right wall")
-    stdscr.addstr(6, 38, "| t     - turn on pathFinder")
-    stdscr.addstr(7, 38, "| q     - quit")
+    stdscr.addstr(4, 5, "VELOCITY")
+    stdscr.addstr(5, 5, "ANGLE   ")
+
+    stdscr.addstr(2, 30, "  KEYBINDINGS")
+    stdscr.addstr(3, 30, "+ ---------------------------------------------")
+    stdscr.addstr(4, 30, "| WASD  - steer. (hold shift to increase ratio)")
+    stdscr.addstr(5, 30, "| Space - stop (disables pathfinder)")
+    stdscr.addstr(6, 30, "| c     - center wheels")
+    stdscr.addstr(7, 30, "| l     - hug left wall")
+    stdscr.addstr(8, 30, "| r     - hug right wall")
+    stdscr.addstr(9, 30, "| t     - turn on pathFinder")
+    stdscr.addstr(10, 30, "| q     - quit")
 
 
 def srvTogglePathFinder(state):
@@ -55,26 +61,26 @@ def srvTogglePathFinder(state):
 def modVelocity(incr):
     global velocity
     velocity = velocity + incr
-    stdscr.addstr(2, 25, '%.2f' % velocity)
+    stdscr.addstr(4, 16, '%.2f' % velocity)
 
 
 def zeroVelocity():
     global velocity
     velocity = 0
-    stdscr.addstr(2, 25, '%.2f' % velocity)
+    stdscr.addstr(4, 16, '%.2f' % velocity)
     srvTogglePathFinder(False)
 
 
 def modAngle(incr):
     global steerAngle
     steerAngle = steerAngle + incr
-    stdscr.addstr(3, 25, '%.2f' % steerAngle)
+    stdscr.addstr(5, 16, '%.2f' % steerAngle)
 
 
 def zeroAngle():
     global steerAngle
     steerAngle = 0
-    stdscr.addstr(3, 25, '%.2f' % steerAngle)
+    stdscr.addstr(5, 16, '%.2f' % steerAngle)
 
 
 def setWallDist(wall, dist):
@@ -89,6 +95,35 @@ def setWallDist(wall, dist):
     except rospy.ROSException, e:
         # print "Service called failed: %s" % e
         pass
+
+
+def convertWallToString(wall):
+    # WALL_LEFT=0
+    # WALL_FRONT=1
+    # WALL_RIGHT=2
+    if (wall is wall_dist.WALL_LEFT):
+        return "Left"
+    elif (wall is wall_dist.WALL_RIGHT):
+        return "Right"
+    elif (wall is wall_dist.WALL_FRONT):
+        return "Front"
+    else:
+        return "Unknown"
+
+
+def pathFinderUpdated(status):
+    global stdscr
+    stdscr.addstr(4, 5, "VELOCITY :")
+    stdscr.addstr(5, 5, "ANGLE    :")
+
+    stdscr.addstr(7, 5, "PathFinder State")
+    stdscr.addstr(8, 5, "----------------")
+    stdscr.addstr(9, 5, "ENABLED  : {}  ".format(status.enabled))
+    stdscr.addstr(10, 5, "WALL     : {}  ".format(
+            convertWallToString(status.hug.wall)
+        ))
+    stdscr.addstr(11, 5, "WALLDIST : {:3.1}  ".format(status.hug.dist))
+    stdscr.refresh()
 
 
 def main():
@@ -150,4 +185,5 @@ def main():
 
 
 if __name__ == '__main__':
+    rospy.Subscriber("pathFinderStatus", pathFinderState, pathFinderUpdated)
     main()
