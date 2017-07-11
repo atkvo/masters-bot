@@ -1,5 +1,6 @@
 build/
 devel/
+dataset/
 msg_gen/
 srv_gen/
 bin/
