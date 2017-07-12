@@ -41,11 +41,12 @@ static const std::string OPENCV_WINDOW2 = "Image post bit depth conversion";
 static const std::string OPENCV_WINDOW3 = "Image post color conversion";
 static const std::string OPENCV_WINDOW4 = "Image window";
 
-class ImageConverter
+class ObjectDetector
 {
 	ros::NodeHandle nh_;
 	image_transport::ImageTransport it_;
 	image_transport::Subscriber image_sub_;
+    image_transport::Publisher detect_img_pub;
     cv::Mat cv_im;
     cv_bridge::CvImagePtr cv_ptr;
     std::chrono::steady_clock::time_point prev;
@@ -69,17 +70,16 @@ class ImageConverter
 	size_t imgSize;
 
 public:
-	ImageConverter(int argc, char** argv ) : it_(nh_)
+	ObjectDetector(int argc, char** argv ) : it_(nh_)
 	{
 		cout << "start constructor" << endl;
 		// Subscrive to input video feed and publish output video feed
-		image_sub_ = it_.subscribe("/left/image_rect_color", 1,
-		  &ImageConverter::imageCb, this);
+		image_sub_ = it_.subscribe("/left/image_rect_color", 2,
+		  &ObjectDetector::imageCb, this);
+        detect_img_pub = it_.advertise("/detected_image", 2);
 
 		cv::namedWindow(OPENCV_WINDOW);
-		//cv::namedWindow(OPENCV_WINDOW2);
-		//cv::namedWindow(OPENCV_WINDOW3);
-		//cv::namedWindow(OPENCV_WINDOW4);
+
 		cout << "Named a window" << endl;
 
         prev = std::chrono::steady_clock::now();
@@ -121,7 +121,7 @@ public:
 
 	}
 
-	~ImageConverter()
+	~ObjectDetector()
 	{
 		cv::destroyWindow(OPENCV_WINDOW);
 	}
@@ -133,14 +133,10 @@ public:
 		{
 			cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
 			cv_im = cv_ptr->image;
-            //cv::imshow(OPENCV_WINDOW, cv_im);
 			cv_im.convertTo(cv_im,CV_32FC3);
-			//ROS_INFO("Image width %d height %d", cv_im.cols, cv_im.rows);
-            //cv::imshow(OPENCV_WINDOW2, cv_im);
 
 			// convert color
 			cv::cvtColor(cv_im,cv_im,CV_BGR2RGBA);
-            //cv::imshow(OPENCV_WINDOW3, cv_im);
 
 		}
 		catch (cv_bridge::Exception& e)
@@ -160,27 +156,20 @@ public:
             CUDA(cudaFree(gpu_data));
             CUDA(cudaMalloc(&gpu_data, cv_im.rows*cv_im.cols * sizeof(float4)));
         }
-        //ROS_INFO("allocation done");
 
 		imgHeight = cv_im.rows;
 		imgWidth = cv_im.cols;
 		imgSize = cv_im.rows*cv_im.cols * sizeof(float4);
 		float4* cpu_data = (float4*)(cv_im.data);
 
-        //ROS_INFO("cuda memcpy begin");
 		// copy to device
 		CUDA(cudaMemcpy(gpu_data, cpu_data, imgSize, cudaMemcpyHostToDevice));
-        //ROS_INFO("cuda memcpy end");
 
-		//void* imgCPU  = NULL;
 		void* imgCUDA = NULL;
 
 
-		// classify image with detectNet
+		// find object with detectNet
 		int numBoundingBoxes = maxBoxes;
-
-        //ROS_INFO("parameters gpu_data: %p imgWidth: %d imgHeight: %d bbCPU: %p numBB pointer: %p numBB: %d",gpu_data, imgWidth, imgHeight,bbCPU, &numBoundingBoxes, numBoundingBoxes);
-
 
 		if( net->Detect((float*)gpu_data, imgWidth, imgHeight, bbCPU, &numBoundingBoxes, confCPU))
 		{
@@ -213,16 +202,6 @@ public:
 				//}
 			}
 
-			/*if( font != NULL )
-			{
-				char str[256];
-				sprintf(str, "%05.2f%% %s", confidence * 100.0f, net->GetClassDesc(img_class));
-
-				font->RenderOverlay((float4*)imgRGBA, (float4*)imgRGBA, camera->GetWidth(), camera->GetHeight(),
-								    str, 10, 10, make_float4(255.0f, 255.0f, 255.0f, 255.0f));
-			}*/
-
-            //std::stringstream fps;
             
             std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
             float fps = 1000.0 / std::chrono::duration_cast<std::chrono::milliseconds>(now - prev).count() ;
@@ -231,7 +210,6 @@ public:
             
 			char str[256];
 			sprintf(str, "TensorRT build %x | %s | %04.1f FPS", NV_GIE_VERSION, net->HasFP16() ? "FP16" : "FP32", fps);
-			//sprintf(str, "GIE build %x | %s | %04.1f FPS | %05.2f%% %s", NV_GIE_VERSION, net->GetNetworkName(), display->GetFPS(), confidence * 100.0f, net->GetClassDesc(img_class));
 			cv::setWindowTitle(OPENCV_WINDOW, str);
 
 		}
@@ -242,21 +220,63 @@ public:
         cv_im.convertTo(cv_im,CV_8UC3);
         cv::cvtColor(cv_im,cv_im,CV_RGBA2BGR);
 
-
-
-
-		// Draw an example circle on the video stream
-		//if (cv_im.rows > 60 && cv_im.cols > 60)
-		  //cv::circle(cv_im, cv::Point(50, 50), 10, CV_RGB(255,0,0));
-
-        // test image
-        cv::String filepath = "/home/ubuntu/Desktop/dog.jpg";
-        cv::Mat testpic = cv::imread(filepath);
 		// Update GUI Window
         cv::imshow(OPENCV_WINDOW, cv_im);
-		//cv::imshow(OPENCV_WINDOW, cv_im);
-		//cv::imshow(OPENCV_WINDOW, testpic);
-		cv::waitKey(3);
+		cv::waitKey(1);
+
+        for( int n=0; n < numBoundingBoxes; n++ ) {
+            
+            const int nc = confCPU[n*2+1];
+            float* bb = bbCPU + (n * 4);
+            
+            sensor_msgs::ImagePtr msg;
+            
+            float crop_width = bb[2] - bb[0];
+            float crop_height = bb[3] - bb[1];
+            float origin_x = bb[0];
+            float origin_y = bb[1];
+            
+            printf("imgWidth: %u imgHeight: %u\n",imgWidth,imgHeight);
+            printf("BEFORE: origin_x: %f origin_y: %f crop_width: %f crop_height: %f\n",origin_x, origin_y, crop_width, crop_height);
+            
+            if (crop_width < crop_height) {
+                float diff = crop_height - crop_width;
+                printf("diff: %f\n",diff);
+                origin_x = origin_x - (diff / 2.0);
+                crop_width = crop_width + (diff / 2.0);
+
+            } else if (crop_width > crop_height) {
+                float diff = crop_width - crop_height;
+                printf("diff: %f\n",diff);
+                origin_y = origin_y - (diff / 2.0);
+                crop_height = crop_height + (diff / 2.0);
+            }
+            printf("MIDDLE: origin_x: %f origin_y: %f crop_width: %f crop_height: %f\n",origin_x, origin_y, crop_width, crop_height);
+
+            
+            if (origin_x < 0.0) {
+                origin_x = 0.0;
+            }
+            
+            if (origin_y < 0.0) {
+                origin_y = 0.0;
+            }
+            
+            if (origin_x + crop_width >= (float)imgWidth ) {
+                crop_width = (float)imgWidth - origin_x - 1.0;
+            }
+            
+            if (origin_y + crop_height >= (float)imgHeight) {
+                crop_height = (float)imgHeight - origin_y - 1.0;
+            }
+            printf("AFTER : origin_x: %f origin_y: %f crop_width: %f crop_height: %f\n",origin_x, origin_y, crop_width, crop_height);
+             
+            cv::Mat croppedImage = cv_im(cv::Rect(origin_x, origin_y, crop_width, crop_height));
+            msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", croppedImage).toImageMsg();
+            detect_img_pub.publish(msg);
+            cv::imshow("crop", croppedImage);
+            cv::waitKey(1);
+        }
 
 	}
 };
@@ -274,46 +294,7 @@ int main( int argc, char** argv ) {
 
 	printf("\n\n");
 
-	ImageConverter ic(argc, argv);
-
-
-	/*
-	 * parse network type from CLI arguments
-	 */
-	/*detectNet::NetworkType networkType = detectNet::PEDNET_MULTI;
-
-	if( argc > 1 )
-	{
-		if( strcmp(argv[1], "multiped") == 0 || strcmp(argv[1], "pednet") == 0 || strcmp(argv[1], "multiped-500") == 0 )
-			networkType = detectNet::PEDNET_MULTI;
-		else if( strcmp(argv[1], "ped-100") == 0 )
-			networkType = detectNet::PEDNET;
-		else if( strcmp(argv[1], "facenet") == 0 || strcmp(argv[1], "facenet-120") == 0 || strcmp(argv[1], "face-120") == 0 )
-			networkType = detectNet::FACENET;
-	}*/
-
-	//if( signal(SIGINT, sig_handler) == SIG_ERR )
-		//printf("\ncan't catch SIGINT\n");
-
-
-	/*
-	 * create the camera device
-	 */
-	//gstCamera* camera = gstCamera::Create(DEFAULT_CAMERA);
-
-	//if( !camera )
-	//{
-		//printf("\ndetectnet-camera:  failed to initialize video device\n");
-		//return 0;
-	//}
-
-	//printf("\ndetectnet-camera:  successfully initialized video device\n");
-	//printf("    width:  %u\n", camera->GetWidth());
-	//printf("   height:  %u\n", camera->GetHeight());
-	//printf("    depth:  %u (bpp)\n\n", camera->GetPixelDepth());
-
-
-
+	ObjectDetector ic(argc, argv);
 
 	ros::spin();
 

@@ -215,6 +215,9 @@ add_dependencies(${PROJECT_NAME}_zed ${PROJECT_NAME}_gencfg)
 cuda_add_executable(obj_detector src/obj_detector.cpp)
 target_link_libraries(obj_detector nvcaffe_parser nvinfer jetson-inference ${LINK_LIBRARIES} ${QT_LIBRARIES})
 
+cuda_add_executable(obj_classifier src/obj_classifier.cpp)
+target_link_libraries(obj_classifier nvcaffe_parser nvinfer jetson-inference ${LINK_LIBRARIES} ${QT_LIBRARIES})
+
 ###############################################################################
 
 ## Rename C++ executable without prefix

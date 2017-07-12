@@ -710,15 +710,15 @@ namespace autobot {
             //NODELET_INFO_STREAM("Advertized on topic " << rgb_topic);
             //pub_raw_rgb = it_zed.advertise(rgb_raw_topic, 1); //rgb raw
             //NODELET_INFO_STREAM("Advertized on topic " << rgb_raw_topic);
-            pub_left = it_zed.advertise(left_topic, 1); //left
+            pub_left = it_zed.advertise(left_topic, 2); //left
             NODELET_INFO_STREAM("Advertized on topic " << left_topic);
             //pub_raw_left = it_zed.advertise(left_raw_topic, 1); //left raw
             //NODELET_INFO_STREAM("Advertized on topic " << left_raw_topic);
-            pub_right = it_zed.advertise(right_topic, 1); //right
+            pub_right = it_zed.advertise(right_topic, 2); //right
             NODELET_INFO_STREAM("Advertized on topic " << right_topic);
             //pub_raw_right = it_zed.advertise(right_raw_topic, 1); //right raw
             //NODELET_INFO_STREAM("Advertized on topic " << right_raw_topic);
-            pub_depth = it_zed.advertise(depth_topic, 1); //depth
+            pub_depth = it_zed.advertise(depth_topic, 2); //depth
             NODELET_INFO_STREAM("Advertized on topic " << depth_topic);
 
             ////PointCloud publisher
