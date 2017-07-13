@@ -73,7 +73,10 @@ def zeroVelocity():
 
 def modAngle(incr):
     global steerAngle
-    steerAngle = steerAngle + incr
+    if (steerAngle == 60 and incr > 0) or (steerAngle == -60 and incr < 0):
+        return  
+    else:
+        steerAngle = steerAngle + incr
     stdscr.addstr(5, 16, '%.2f' % steerAngle)
 
 
@@ -147,13 +150,13 @@ def main():
         stdscr.refresh()
 
         if key == curses.KEY_UP or key == ord('w'):
-            modVelocity(0.1)
+            modVelocity(0.1 * velocityMultiplier)
             keyPressed = True
         elif key == ord('W'):
             modVelocity(0.1 * velocityMultiplier)
             keyPressed = True
         elif key == curses.KEY_DOWN or key == ord('s'):
-            modVelocity(-0.1)
+            modVelocity(-0.1 * velocityMultiplier)
             keyPressed = True
         elif key == ord('S'):
             modVelocity(-0.1 * velocityMultiplier)
