@@ -3,6 +3,8 @@
 from std_msgs.msg import String
 #import roslib
 import sys
+import datetime
+import time
 
 import numpy as np
 from cv_bridge import CvBridge, CvBridgeError
@@ -19,6 +21,8 @@ i = 0
 bridge = CvBridge(); 
 currentImage = 0
 currentAngle = 0
+currentVel = 0
+time = time.time()
 
 def __init__(self):
     bridge = CvBridge(); 
@@ -32,23 +36,26 @@ def callback(temp):
         print(e)
     print("picture taken")
     global currentAngle
+    global currentVel
     global i
-    filepath = "dataset/" + str(currentAngle) + "_" + str(i) + ".png"
+    filepath = "dataset/" + str(currentAngle) + "_" + str(i) + str(time) + ".png"
     i+=1
-    cv2.imwrite(filepath, currentImage) 
+    if currentVel > 6.0:
+        cv2.imwrite(filepath, currentImage) 
 
 def takePicture(data):
     
     #define file path
     print("picture taken")
     global currentAngle
+    global currentVel
     currentAngle = data.angle
+    currentVel = data.velocity
     global i
     filepath = "dataset/" + str(currentAngle) + "_" + str(i) + ".png"
     i+=1
-    cv2.imwrite(filepath, currentImage) 
-    #cv2.imshow('image', currentImage)
-    #cv2.waitKey(0)
+    if currentVel > 6.0:
+          cv2.imwrite(filepath, currentImage) 
 
 def listen():
     bridge = CvBridge();
@@ -59,4 +66,5 @@ def listen():
 
 if __name__ == '__main__':
     print("image capture initialized")
+    print(time)
     listen()
