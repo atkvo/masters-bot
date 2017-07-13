@@ -74,7 +74,9 @@ public:
 	{
 		cout << "start constructor" << endl;
 		// Subscrive to input video feed and publish output video feed
-		image_sub_ = it_.subscribe("/left/image_rect_color", 2,
+		//image_sub_ = it_.subscribe("/left/image_rect_color", 2,
+		  //&ObjectClassifier::imageCb, this);
+        image_sub_ = it_.subscribe("/detected_image", 2,
 		  &ObjectClassifier::imageCb, this);
 
 
