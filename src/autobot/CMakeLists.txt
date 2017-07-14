@@ -28,6 +28,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
   std_msgs
+  sensor_msgs
   message_generation
   geometry_msgs
   #tf
@@ -85,6 +86,9 @@ add_message_files(
   pid_input.msg
   wall_dist.msg
   pathFinderState.msg
+  bounding_box.msg
+  detected_img.msg
+  detected_object.msg
 )
 
 ## Generate services in the 'srv' folder

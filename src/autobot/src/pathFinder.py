@@ -28,14 +28,15 @@ class PathConfig(object):
              autobot.msg.wall_dist.WALL_RIGHT
              autobot.msg.wall_dist.WALL_FRONT  #< probably won't be used
     """
-    wallToWatch = autobot.msg.wall_dist.WALL_RIGHT
-    desiredTrajectory = 0.5  # desired distance from the wall
-    minFrontDist = 2.2       # minimum required distance in front of car
-    velocity = 7.3           # velocity of drive
-    pubRate = 0              # publish rate of node
-    enabled = False          # enable/disable state of wall hugging
+    def __init__(self):
+        self.wallToWatch = autobot.msg.wall_dist.WALL_RIGHT
+        self.desiredTrajectory = 0.5  # desired distance from the wall
+        self.minFrontDist = 2.2       # minimum required distance in front of car
+        self.velocity = 7.3           # velocity of drive
+        self.pubRate = 0              # publish rate of node
+        self.enabled = False          # enable/disable state of wall hugging
 
-
+PATH_CONFIG = PathConfig()
 errorPub = rospy.Publisher('error', pid_input, queue_size=10)
 motorPub = rospy.Publisher('drive_parameters', drive_param, queue_size=10)
 statePub = rospy.Publisher('pathFinderStatus', pathFinderState, queue_size=10)
@@ -45,8 +46,8 @@ def HandleTogglePathFinderService(req):
     """ Handler for enabling/disabling path finder
     Responds with ack msg (bool)
     """
-    global PathConfig
-    PathConfig.enabled = req.state
+    global PATH_CONFIG
+    PATH_CONFIG.enabled = req.state
     return TogglePathFinderResponse(True)
 
 
@@ -56,7 +57,7 @@ def HandleAdjustWallDist(req):
     Responds with wall_dist msg and a bool to verify that the
     service command has been accepted
     """
-    global PathConfig
+    global PATH_CONFIG
 
     print " wall {}".format(req.cmd.wall)
     print " dist {}".format(req.cmd.dist)
@@ -69,24 +70,24 @@ def HandleAdjustWallDist(req):
         Service client can send an invalid wall or distance
         query current settings
         """
-        PathConfig.wallToWatch = req.cmd.wall
-        PathConfig.desiredTrajectory = req.cmd.dist
+        PATH_CONFIG.wallToWatch = req.cmd.wall
+        PATH_CONFIG.desiredTrajectory = req.cmd.dist
     else:
         isValid = False
 
-    resp.wall = PathConfig.wallToWatch
-    resp.dist = PathConfig.desiredTrajectory
+    resp.wall = PATH_CONFIG.wallToWatch
+    resp.dist = PATH_CONFIG.desiredTrajectory
     return AdjustWallDistResponse(resp, isValid)
 
 
 def publishCurrentState(event):
-    global PathConfig
+    global PATH_CONFIG
 
     msg = pathFinderState()
-    msg.velocity = PathConfig.velocity
-    msg.hug.wall = PathConfig.wallToWatch
-    msg.hug.dist = PathConfig.desiredTrajectory
-    msg.enabled = PathConfig.enabled
+    msg.velocity = PATH_CONFIG.velocity
+    msg.hug.wall = PATH_CONFIG.wallToWatch
+    msg.hug.dist = PATH_CONFIG.desiredTrajectory
+    msg.enabled = PATH_CONFIG.enabled
     statePub.publish(msg)
 
 
@@ -109,10 +110,10 @@ def getRange(data, theta):
 
 
 def callback(data):
-    global PathConfig
+    global PATH_CONFIG
 
     # Do not attempt to hug wall if disabled
-    if PathConfig.enabled is False:
+    if PATH_CONFIG.enabled is False:
         return
 
     frontDistance = getRange(data, 90)
@@ -125,7 +126,7 @@ def callback(data):
     thetaDistLeft = getRange(data, 180-theta)  # aL
     leftDist = getRange(data, 180)  # bL
 
-    if frontDistance < PathConfig.minFrontDist:
+    if frontDistance < PATH_CONFIG.minFrontDist:
         # TURN
         print "Blocked!"
         driveParam = drive_param()
@@ -135,7 +136,7 @@ def callback(data):
         else:
             driveParam.angle = -90
             print "Turning Left"
-        driveParam.velocity = PathConfig.velocity
+        driveParam.velocity = PATH_CONFIG.velocity
         motorPub.publish(driveParam)
         return
 
@@ -173,8 +174,8 @@ def callback(data):
     and the distance to the wall
     """
     # ARE WE PROCESSING THIS ERROR CORRECTLY? GETS SENT TO PIDCONTROL.PY
-    errorRight = projectedDistRight - PathConfig.desiredTrajectory
-    errorLeft = projectedDistLeft - PathConfig.desiredTrajectory
+    errorRight = projectedDistRight - PATH_CONFIG.desiredTrajectory
+    errorLeft = projectedDistLeft - PATH_CONFIG.desiredTrajectory
     errorLeft *= -1
 
     dbg = ("----------------------------------\n"
@@ -197,16 +198,16 @@ def callback(data):
     print dbg
 
     msg = pid_input()
-    if PathConfig.wallToWatch == autobot.msg.wall_dist.WALL_LEFT:
+    if PATH_CONFIG.wallToWatch == autobot.msg.wall_dist.WALL_LEFT:
         msg.pid_error = errorLeft
     else:
         msg.pid_error = errorRight
 
-    msg.pid_vel = PathConfig.velocity
+    msg.pid_vel = PATH_CONFIG.velocity
 
-    PathConfig.pubRate += 1
-    if (PathConfig.pubRate % 10 == 0):
-        PathConfig.pubRate = 0
+    PATH_CONFIG.pubRate += 1
+    if (PATH_CONFIG.pubRate % 10 == 0):
+        PATH_CONFIG.pubRate = 0
         errorPub.publish(msg)
 
 if __name__ == '__main__':
