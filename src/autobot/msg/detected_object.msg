@@ -1,3 +1,3 @@
 std_msgs/String class
-float32 distance 
+sensor_msgs/Image depthImg
 bounding_box box
