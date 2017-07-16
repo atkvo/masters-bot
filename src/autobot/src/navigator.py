@@ -8,6 +8,7 @@ from autobot.msg import detected_object
 from autobot.srv import *
 from sensor_msgs.msg import Image
 from pathFinder import PathConfig
+from obstruction import *
 
 import cv2
 import numpy as np
@@ -28,81 +29,6 @@ TODO:
         is primitive. Should decisions be made with a finer scale?
         See callback below for more notes
 """
-
-
-class ObstructionInfo(object):
-
-    def __init__(self):
-        self.distance = 999
-        self.position = 0
-        self.className = ""
-
-
-class ObstructionMap(object):
-    """ TODO: Write down class information
-    Store objects into a dict?
-    Or a numpy type of array? Numpy can get things by distance
-
-    Obstructions
-    LEFT, RIGHT
-    """
-    LEFT = 0
-    RIGHT = 1
-    TOP = 2
-    BOTTOM = 3
-
-    def __init__(self):
-        self.obstructions = dict()
-
-    def clearMap(self):
-        self.obstructions.clear()
-
-    def addToMap(self, className, x, y, distance):
-        """NOTE
-        if (x > threshold) gives the location of object in terms of left/right
-        # Do objects closest to the car get priority?
-        self.obstructions[k] = (className, distance)
-        """
-        side = LEFT
-        obs = ObstructionInfo()
-        obs.className = className
-        obs.distance = distance
-        obs.position = side
-        if (side in self.obstructions is False or
-                distance < self.obstructions[side][1]):
-            self.obstructions[side] = (className, distance)
-
-    def getClosest(self):
-        """NOTE
-        Loop through obstruction list and make decision on which object
-        is the most dangerous/closest
-
-        Returns ObstructionInfo object
-        """
-        if len(self.obstructions) is 0:
-            return None
-
-        closestObject = ObstructionInfo()
-        for side in self.obstructions:
-            if this.obstructions[side].distance < closestObject.distance:
-                closestObject = self.obstructions[side]
-
-        return closestObject
-
-    def getHighPriorities(self):
-        """
-        TODO: Return a list of high priority objects?
-        High priorities include things like chairs (what else?).
-
-        E.g. If currently hugging the right wall closely and a closed door is
-        coming up, but there is a chair somewhat to the left of the car...
-        do NOT attempt to drive away from the wall to avoid the door. Instead
-        either stick to that wall or maybe swing the car all the way to the
-        left wall to avoid the chair.
-        """
-        pass
-
-
 PATH_STATE = PathConfig()
 PUB_DRIVE = rospy.Publisher('drive_parameters', drive_param, queue_size=10)
 OBJECT_MAP = ObstructionMap()
@@ -219,6 +145,11 @@ def onObjectDetected(msg):
                         msg.box.origin_x: msg.box.origin_x + msg.box.width]
         avg = getAverageColor(crop)
         # Use the average color to determine the distance from zed depth map
+        # Pass obstruction info to mapper
+        # global OBJECT_MAP
+        # OBJECT_MAP.addToMap(msg.class,
+        #                     msg.box.origin_x, msg.box.origin_y,
+        #                     distance)
     except CvBridgeError as e:
         print(e)
 
