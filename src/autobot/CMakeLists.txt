@@ -89,6 +89,7 @@ add_message_files(
   bounding_box.msg
   detected_img.msg
   detected_object.msg
+  compound_img.msg
 )
 
 ## Generate services in the 'srv' folder
@@ -104,6 +105,7 @@ add_service_files(
 #   Action1.action
 #   Action2.action
 # )
+
 
 ## Generate added messages and services with any dependencies listed here
 generate_messages(
