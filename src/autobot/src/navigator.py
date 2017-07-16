@@ -9,9 +9,9 @@ from autobot.srv import *
 from sensor_msgs.msg import Image
 from pathFinder import PathConfig
 
+import cv2
 import numpy as np
 from cv_bridge import CvBridge, CvBridgeError
-import cv2
 
 """
 This node is responsible for configuring the pathFinder node
@@ -68,8 +68,8 @@ class ObstructionMap(object):
         obs.className = className
         obs.distance = distance
         obs.position = side
-        if side in self.obstructions is False or
-        distance < self.obstructions[side][1]:
+        if (side in self.obstructions is False or
+                distance < self.obstructions[side][1]):
             self.obstructions[side] = (className, distance)
 
     def getClosest(self):
@@ -105,8 +105,7 @@ class ObstructionMap(object):
 
 PATH_STATE = PathConfig()
 PUB_DRIVE = rospy.Publisher('drive_parameters', drive_param, queue_size=10)
-DECISION_RATE_SEC = 0.5
-OBJECT_MAP = ObjectMap()
+OBJECT_MAP = ObstructionMap()
 
 
 def srvTogglePathFinder(state):
@@ -164,6 +163,13 @@ def pathFinderUpdated(status):
     PATH_STATE.enabled = status.enabled
 
 
+def getAverageColor(img):
+    """Returns average color of img"""
+    avgColorPerRow = np.average(img, axis=0)
+    avgColor = np.average(avgColorPerRow, axis=0)
+    return avgColor
+
+
 def onDecisionInterval(event):
     """
     Makes pathing decision based on objects detected
@@ -203,18 +209,22 @@ def onObjectDetected(msg):
     """
     bridge = CvBridge()
     try:
-        depthMap = bridge.imgmsg_to_cv2(msg.depthImg,
-                                        desired_encoding="passthrough")
         # Step 1. map box onto depthImg to get distance map of object
         # Step 2. get the average distance of the object
         # Step 3. store these onto a list or array
         #   Organize by distance? Location?
+        depthMap = bridge.imgmsg_to_cv2(msg.depthImg,
+                                        desired_encoding="passthrough")
+        crop = depthMap[msg.box.origin_y: msg.box.origin_y + msg.box.height,
+                        msg.box.origin_x: msg.box.origin_x + msg.box.width]
+        avg = getAverageColor(crop)
+        # Use the average color to determine the distance from zed depth map
     except CvBridgeError as e:
         print(e)
 
 
 if __name__ == '__main__':
-    global DECISION_RATE_SEC
+    DECISION_RATE_SEC = 0.5
     rospy.Subscriber("pathFinderStatus", pathFinderState, pathFinderUpdated)
     rospy.Subscriber("drive_parameters", drive_param, driveParamsUpdated)
     rospy.Subscriber("object_detector", detected_object, onObjectDetected)
