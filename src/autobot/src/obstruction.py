@@ -23,12 +23,15 @@ class ObstructionMap(object):
     RIGHT = 1
     TOP = 2
     BOTTOM = 3
+    HIGHPRIORITIES = ['chair', 'doorstop']
 
     def __init__(self):
         self.obstructions = dict()
+        self.highprios = dict()
 
     def clearMap(self):
         self.obstructions.clear()
+        self.highprios.clear()
 
     def addToMap(self, className, x, y, distance):
         """NOTE
@@ -42,8 +45,10 @@ class ObstructionMap(object):
         obs.distance = distance
         obs.position = side
         if (side in self.obstructions is False or
-                distance < self.obstructions[side][1]):
+                distance < self.obstructions[side].distance):
             self.obstructions[side] = (className, distance)
+        if obs.className in HIGHPRIORITIES:
+            self.highprios.append(obj)
 
     def getClosest(self):
         """NOTE
