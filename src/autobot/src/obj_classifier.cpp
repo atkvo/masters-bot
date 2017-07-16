@@ -87,42 +87,14 @@ public:
         prev = std::chrono::steady_clock::now();
 
          // create imageNet
-        // net = imageNet::Create(prototxt_path.c_str(),model_path.c_str(),NULL,class_labels_path.c_str());
         net = imageNet::Create(argc, argv );
-		/*
-		 * create detectNet
-		 */
-		//net = detectNet::Create(argc, argv);
-		//cout << "Created DetectNet" << endl;
+
 
 		if( !net )
 		{
 			printf("obj_detect:   failed to initialize imageNet\n");
 
 		}
-        
-        //maxBoxes = net->GetMaxBoundingBoxes();
-		//printf("maximum bounding boxes:  %u\n", maxBoxes);
-		//classes  = net->GetNumClasses();
-
-
-		///*
-		 //* allocate memory for output bounding boxes and class confidence
-		 //*/
-
-		//if( !cudaAllocMapped((void**)&bbCPU, (void**)&bbCUDA, maxBoxes * sizeof(float4)) ||
-			//!cudaAllocMapped((void**)&confCPU, (void**)&confCUDA, maxBoxes * classes * sizeof(float)) )
-		//{
-			//printf("detectnet-console:  failed to alloc output memory\n");
-
-		//}
-		//cout << "Allocated CUDA mem" << endl;
-
-
-		//maxBoxes = net->GetMaxBoundingBoxes();
-		//printf("maximum bounding boxes:  %u\n", maxBoxes);
-		//classes  = net->GetNumClasses();
-		//cout << "Constructor operations complete" << endl;
 
 	}
 
