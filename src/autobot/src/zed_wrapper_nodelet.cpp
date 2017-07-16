@@ -48,6 +48,7 @@
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2_ros/transform_broadcaster.h>
 #include <geometry_msgs/TransformStamped.h>
+#include <autobot/compound_img.h>
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
@@ -80,6 +81,7 @@ namespace autobot {
         image_transport::Publisher pub_right;
         image_transport::Publisher pub_raw_right;
         image_transport::Publisher pub_depth;
+        ros::Publisher pub_compound_img;
         ros::Publisher pub_cloud;
         ros::Publisher pub_rgb_cam_info;
         ros::Publisher pub_left_cam_info;
@@ -278,6 +280,25 @@ namespace autobot {
             }
             pub_depth.publish(imageToROSmsg(depth, encoding, depth_frame_id, t));
         }
+        
+        void publishDepthPlusImage(cv::Mat img, cv::Mat depth, ros::Publisher &pub_compound_img, string img_frame_id, string depth_frame_id, ros::Time t) {
+            string encoding;
+            if (openniDepthMode) {
+                depth *= 1000.0f;
+                depth.convertTo(depth, CV_16UC1); // in mm, rounded
+                encoding = sensor_msgs::image_encodings::TYPE_16UC1;
+            } else {
+                encoding = sensor_msgs::image_encodings::TYPE_32FC1;
+            }
+            
+            sensor_msgs::ImagePtr img_msg = imageToROSmsg(img, sensor_msgs::image_encodings::BGR8, img_frame_id, t);
+            sensor_msgs::ImagePtr depth_msg = imageToROSmsg(depth, encoding, depth_frame_id, t);
+            boost::shared_ptr<autobot::compound_img> comp_img = boost::make_shared<autobot::compound_img>();;
+            comp_img->img = *img_msg.get();
+            comp_img->depthImg = *depth_msg.get();
+            
+            pub_compound_img.publish<autobot::compound_img>(comp_img);
+        }
 
         /* \brief Publish a pointCloud with a ros Publisher
          * \param width : the width of the point cloud
@@ -438,6 +459,7 @@ namespace autobot {
                 int right_SubNumber = pub_right.getNumSubscribers();
                 int right_raw_SubNumber = pub_raw_right.getNumSubscribers();
                 int depth_SubNumber = pub_depth.getNumSubscribers();
+                int compound_SubNumber = pub_compound_img.getNumSubscribers();
                 int cloud_SubNumber = pub_cloud.getNumSubscribers();
                 int odom_SubNumber = pub_odom.getNumSubscribers();
                 bool runLoop = (rgb_SubNumber + rgb_raw_SubNumber + left_SubNumber + left_raw_SubNumber + right_SubNumber + right_raw_SubNumber + depth_SubNumber + cloud_SubNumber + odom_SubNumber) > 0;
@@ -557,6 +579,13 @@ namespace autobot {
                         publishCamInfo(depth_cam_info_msg, pub_depth_cam_info, t);
                         publishDepth(toCVMat(depthZEDMat), pub_depth, depth_frame_id, t); // in meters
                     }
+                    
+                    if (compound_SubNumber > 0) {
+                        zed->retrieveImage(leftZEDMat, sl::VIEW_LEFT);
+                        cv::cvtColor(toCVMat(leftZEDMat), leftImRGB, CV_RGBA2RGB);
+                        zed->retrieveMeasure(depthZEDMat, sl::MEASURE_DEPTH);
+                        publishDepthPlusImage(leftImRGB, toCVMat(depthZEDMat), pub_compound_img, left_frame_id, depth_frame_id, t); // in meters
+                    }
 
                     // Publish the point cloud if someone has subscribed to
                     //if (cloud_SubNumber > 0) {
@@ -622,6 +651,8 @@ namespace autobot {
                 depth_topic += "depth_raw_registered";
             else
                 depth_topic += "depth_registered";
+
+            string compound_topic = "compound_img/";
 
             string depth_cam_info_topic = "depth/camera_info";
             depth_frame_id = "/zed_depth_frame";
@@ -721,6 +752,10 @@ namespace autobot {
             pub_depth = it_zed.advertise(depth_topic, 2); //depth
             NODELET_INFO_STREAM("Advertized on topic " << depth_topic);
 
+            
+            pub_compound_img = nh.advertise<autobot::compound_img>(compound_topic, 2); //depth
+            NODELET_INFO_STREAM("Advertized on topic " << compound_topic);
+
             ////PointCloud publisher
             //pub_cloud = nh.advertise<sensor_msgs::PointCloud2> (point_cloud_topic, 1);
             //NODELET_INFO_STREAM("Advertized on topic " << point_cloud_topic);
@@ -736,7 +771,9 @@ namespace autobot {
             NODELET_INFO_STREAM("Advertized on topic " << depth_cam_info_topic);
 
             //Odometry publisher
+
             //pub_odom = nh.advertise<nav_msgs::Odometry>(odometry_topic, 1);
+
             //NODELET_INFO_STREAM("Advertized on topic " << odometry_topic);
 
             device_poll_thread = boost::shared_ptr<boost::thread>
