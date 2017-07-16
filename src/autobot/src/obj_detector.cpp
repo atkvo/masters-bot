@@ -7,9 +7,11 @@
 #include <image_transport/image_transport.h>
 #include <cv_bridge/cv_bridge.h>
 #include <sensor_msgs/image_encodings.h>
+#include <autobot/compound_img.h>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
+#include <boost/make_shared.hpp>
 #include <stdio.h>
 #include <signal.h>
 #include <unistd.h>
@@ -45,7 +47,7 @@ class ObjectDetector
 {
 	ros::NodeHandle nh_;
 	image_transport::ImageTransport it_;
-	image_transport::Subscriber image_sub_;
+	ros::Subscriber image_sub_;
     image_transport::Publisher detect_img_pub;
     cv::Mat cv_im;
     cv_bridge::CvImagePtr cv_ptr;
@@ -74,7 +76,9 @@ public:
 	{
 		cout << "start constructor" << endl;
 		// Subscrive to input video feed and publish output video feed
-		image_sub_ = it_.subscribe("/left/image_rect_color", 2,
+		//image_sub_ = it_.subscribe("/left/image_rect_color", 2,
+		  //&ObjectDetector::imageCb, this);
+        image_sub_ = nh_.subscribe("/compound_img", 2,
 		  &ObjectDetector::imageCb, this);
         detect_img_pub = it_.advertise("/detected_image", 2);
 
@@ -126,13 +130,17 @@ public:
 		cv::destroyWindow(OPENCV_WINDOW);
 	}
 
-	void imageCb(const sensor_msgs::ImageConstPtr& msg)
+	void imageCb(const autobot::compound_img& cp_msg)
 	{
+        //ROS_INFO("callback called");
+        //boost::shared_ptr<sensor_msgs::Image> cp_shared(&cp_msg.depthImg);
+        //sensor_msgs::ImageConstPtr msg = cp_shared;
 
 		try
 		{
-			cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
+			cv_ptr = cv_bridge::toCvCopy(cp_msg.img, sensor_msgs::image_encodings::BGR8);
 			cv_im = cv_ptr->image;
+            
 			cv_im.convertTo(cv_im,CV_32FC3);
 
 			// convert color
@@ -185,21 +193,7 @@ public:
 
 				printf("bounding box %i   (%f, %f)  (%f, %f)  w=%f  h=%f\n", n, bb[0], bb[1], bb[2], bb[3], bb[2] - bb[0], bb[3] - bb[1]);
                 cv::rectangle( cv_im, cv::Point( bb[0], bb[1] ), cv::Point( bb[2], bb[3]), cv::Scalar( 255, 55, 0 ), +1, 4 );
-				//cv::rectangle(cv_im, Rect rec, Scalar( rand()&255, rand()&255, rand()&255 ),1, LINE_8, 0 )
 
-
-				//if( nc != lastClass || n == (numBoundingBoxes - 1) )
-				//{
-					//if( !net->DrawBoxes((float*)gpu_data, (float*)gpu_data, imgWidth, imgHeight,
-						                        //bbCUDA + (lastStart * 4), (n - lastStart) + 1, lastClass) )
-						//printf("detectnet-console:  failed to draw boxes\n");
-
-
-					//lastClass = nc;
-					//lastStart = n;
-
-					////CUDA(cudaDeviceSynchronize());
-				//}
 			}
 
             
