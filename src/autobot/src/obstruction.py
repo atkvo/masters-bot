@@ -23,15 +23,15 @@ class ObstructionMap(object):
     RIGHT = 1
     TOP = 2
     BOTTOM = 3
-    HIGHPRIORITIES = ['chair', 'doorstop']
+    HIGHPRIORITIES = ['chair', 'stop sign']
 
     def __init__(self):
         self.obstructions = dict()
-        self.highprios = dict()
+        self.highprios = []
 
     def clearMap(self):
         self.obstructions.clear()
-        self.highprios.clear()
+        self.highprios = []
 
     def addToMap(self, className, x, y, distance):
         """NOTE
@@ -78,4 +78,4 @@ class ObstructionMap(object):
         either stick to that wall or maybe swing the car all the way to the
         left wall to avoid the chair.
         """
-        pass
+        return self.highprios
