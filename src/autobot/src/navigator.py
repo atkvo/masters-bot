@@ -102,15 +102,18 @@ def onDecisionInterval(event):
     TODO:
     - [ ] When to prefer hugging the current wall vs moving
           to the opposite wall
+          - Maybe when multiple objects are crowding the X side
     - [ ] Get list of how far/close to wall to get depending on class
     - [ ] May need a hierarchy of "priorities". E.g.
             if a CHAIR is in the view, stay clear of it even if there
             is a closed door coming up close
+            if a stop sign is close, stop the car for a bit?
     """
     global OBJECT_MAP
     global PATH_STATE
 
     obstruct = OBJECT_MAP.getClosest()
+    alert = OBJECT_MAP.getHighPriorities()
     if obstruct is None:
         return
 
@@ -119,9 +122,17 @@ def onDecisionInterval(event):
         wallToHug = wall_dist.WALL_RIGHT
     elif obstruct.position == ObstructionMap.RIGHT:
         wallToHug = wall_dist.WALL_LEFT
+    elif obstruct.position == ObstructionMap.CENTER:
+        # Increase distance from the wall?
+        setWallDist(wallToHug, PATH_STATE.desiredTrajectory += 0.25)
 
     if obstruct.className == "DOOR":
         setWallDist(wallToHug, 2)
+    elif obstruct.className == "CHAIR":
+        setWallDist(wallToHug, 0)
+        pass
+
+    OBJECT_MAP.clearMap()
     pass
 
 
@@ -135,21 +146,16 @@ def onObjectDetected(msg):
     """
     bridge = CvBridge()
     try:
-        # Step 1. map box onto depthImg to get distance map of object
-        # Step 2. get the average distance of the object
-        # Step 3. store these onto a list or array
-        #   Organize by distance? Location?
         depthMap = bridge.imgmsg_to_cv2(msg.depthImg,
                                         desired_encoding="passthrough")
         crop = depthMap[msg.box.origin_y: msg.box.origin_y + msg.box.height,
                         msg.box.origin_x: msg.box.origin_x + msg.box.width]
         avg = getAverageColor(crop)
-        # Use the average color to determine the distance from zed depth map
-        # Pass obstruction info to mapper
-        # global OBJECT_MAP
-        # OBJECT_MAP.addToMap(msg.class,
-        #                     msg.box.origin_x, msg.box.origin_y,
-        #                     distance)
+        distance = 0  # TODO: Get conversion between ZED color and distance
+        global OBJECT_MAP
+        OBJECT_MAP.addToMap(msg.class,
+                            msg.box.origin_x, msg.box.origin_y,
+                            distance)
     except CvBridgeError as e:
         print(e)
 
