@@ -96,12 +96,24 @@ def getAverageColor(img):
     return avgColor
 
 
+def shadeToDepth(color):
+    """Returns depth in meters from color b/w"""
+    minDistance = 0.7
+    maxDistance = 20
+    maxColor = 255
+    # depth = mx + b
+    m = (minDistance - maxDistance)/maxColor
+    x = color
+    b = maxDistance
+    return m * x + b
+
+
 def onDecisionInterval(event):
     """
     Makes pathing decision based on objects detected
     TODO:
     - [ ] When to prefer hugging the current wall vs moving
-          to the opposite wall
+          to the apposite wall
           - Maybe when multiple objects are crowding the X side
     - [ ] Get list of how far/close to wall to get depending on class
     - [ ] May need a hierarchy of "priorities". E.g.
@@ -112,23 +124,23 @@ def onDecisionInterval(event):
     global OBJECT_MAP
     global PATH_STATE
 
-    obstruct = OBJECT_MAP.getClosest()
+    closest = OBJECT_MAP.getClosest()
     alert = OBJECT_MAP.getHighPriorities()
     if obstruct is None:
         return
 
     wallToHug = PATH_STATE.wallToWatch
-    if obstruct.position == ObstructionMap.LEFT:
+    if closest.position == ObstructionMap.LEFT:
         wallToHug = wall_dist.WALL_RIGHT
-    elif obstruct.position == ObstructionMap.RIGHT:
+    elif closest.position == ObstructionMap.RIGHT:
         wallToHug = wall_dist.WALL_LEFT
-    elif obstruct.position == ObstructionMap.CENTER:
+    elif closest.position == ObstructionMap.CENTER:
         # Increase distance from the wall?
         setWallDist(wallToHug, PATH_STATE.desiredTrajectory + 0.25)
 
-    if obstruct.className == "DOOR":
+    if closest.className == "DOOR":
         setWallDist(wallToHug, 2)
-    elif obstruct.className == "CHAIR":
+    elif closest.className == "CHAIR":
         setWallDist(wallToHug, 0)
         pass
 
@@ -153,7 +165,7 @@ def onObjectDetected(msg):
         avg = getAverageColor(crop)
         distance = 0  # TODO: Get conversion between ZED color and distance
         global OBJECT_MAP
-        OBJECT_MAP.addToMap(msg.class,
+        OBJECT_MAP.addToMap(msg.className,
                             msg.box.origin_x, msg.box.origin_y,
                             distance)
     except CvBridgeError as e:
