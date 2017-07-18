@@ -44,7 +44,7 @@ def srvTogglePathFinder(state):
         pass
 
 
-def zeroVelocity():
+def stopCar():
     global PUB_DRIVE
     msg = drive_param()
     msg.velocity = 0
@@ -108,6 +108,14 @@ def shadeToDepth(color):
     return m * x + b
 
 
+def hasObstruction(className, list):
+    for o in list:
+        if o.className == className:
+            return (True, o)
+
+    return (False, None)
+
+
 def onDecisionInterval(event):
     """
     Makes pathing decision based on objects detected
@@ -125,24 +133,32 @@ def onDecisionInterval(event):
     global PATH_STATE
 
     closest = OBJECT_MAP.getClosest()
-    alert = OBJECT_MAP.getHighPriorities()
-    if obstruct is None:
+    dangers = OBJECT_MAP.getHighPriorities()
+    if dangers is None and closest is None:
         return
 
-    wallToHug = PATH_STATE.wallToWatch
-    if closest.position == ObstructionMap.LEFT:
-        wallToHug = wall_dist.WALL_RIGHT
-    elif closest.position == ObstructionMap.RIGHT:
-        wallToHug = wall_dist.WALL_LEFT
-    elif closest.position == ObstructionMap.CENTER:
-        # Increase distance from the wall?
-        setWallDist(wallToHug, PATH_STATE.desiredTrajectory + 0.25)
+    hasIt, obstruction = hasObstruction('person', dangers)
+    # TODO: make sure person is in a certain X position before stopping
+    if hasIt and obstruction.distance < 2 and PATH_STATE.enabled:
+        stopCar()
+    else:
+        setWallDist(0.5, PATH_STATE.wallToWatch)
+        srvTogglePathFinder(True)
 
-    if closest.className == "DOOR":
-        setWallDist(wallToHug, 2)
-    elif closest.className == "CHAIR":
-        setWallDist(wallToHug, 0)
-        pass
+    # wallToHug = PATH_STATE.wallToWatch
+    # if closest.position == ObstructionMap.LEFT:
+    #     wallToHug = wall_dist.WALL_RIGHT
+    # elif closest.position == ObstructionMap.RIGHT:
+    #     wallToHug = wall_dist.WALL_LEFT
+    # elif closest.position == ObstructionMap.CENTER:
+    #     # Increase distance from the wall?
+    #     setWallDist(wallToHug, PATH_STATE.desiredTrajectory + 0.25)
+
+    # if closest.className == "DOOR":
+    #     setWallDist(wallToHug, 2)
+    # elif closest.className == "CHAIR":
+    #     setWallDist(wallToHug, 0)
+    #     pass
 
     OBJECT_MAP.clearMap()
     pass
