@@ -124,7 +124,7 @@ def onDecisionInterval(event):
         wallToHug = wall_dist.WALL_LEFT
     elif obstruct.position == ObstructionMap.CENTER:
         # Increase distance from the wall?
-        setWallDist(wallToHug, PATH_STATE.desiredTrajectory += 0.25)
+        setWallDist(wallToHug, PATH_STATE.desiredTrajectory + 0.25)
 
     if obstruct.className == "DOOR":
         setWallDist(wallToHug, 2)
