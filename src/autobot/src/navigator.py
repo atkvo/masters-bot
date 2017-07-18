@@ -163,7 +163,7 @@ def onObjectDetected(msg):
         crop = depthMap[msg.box.origin_y: msg.box.origin_y + msg.box.height,
                         msg.box.origin_x: msg.box.origin_x + msg.box.width]
         avg = getAverageColor(crop)
-        distance = 0  # TODO: Get conversion between ZED color and distance
+        distance = shadeToDepth(avg)
         global OBJECT_MAP
         OBJECT_MAP.addToMap(msg.className,
                             msg.box.origin_x, msg.box.origin_y,
