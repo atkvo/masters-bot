@@ -10,4 +10,6 @@ cmake_install.cmake
 *.pyc
 *.swp
 *~
+tags
+.vscode
 
