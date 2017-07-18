@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+from collections import defaultdict
 
 
 class ObstructionInfo(object):
@@ -19,15 +20,15 @@ class ObstructionMap(object):
     Obstructions
     LEFT, RIGHT
     """
-    LEFT = 0
-    RIGHT = 1
-    TOP = 2
-    BOTTOM = 3
-    CENTER = 4
+    LEFT = 'LEFT'
+    RIGHT = 'RIGHT'
+    TOP = 'TOP'
+    BOTTOM = 'BOTTOM'
+    CENTER = 'CENTER'
     HIGHPRIORITIES = ['chair', 'stop sign']
 
     def __init__(self):
-        self.obstructions = dict()
+        self.obstructions = defaultdict(list)
         self.highprios = []
 
     def clearMap(self):
@@ -40,25 +41,25 @@ class ObstructionMap(object):
         # Do objects closest to the car get priority?
         self.obstructions[k] = (className, distance)
         """
-        side = LEFT
+        side = ObstructionMap.LEFT
         obs = ObstructionInfo()
         obs.className = className
         obs.distance = distance
-        obs.position = xToSide(x)
-        if (side in self.obstructions is False or
-                distance < self.obstructions[side].distance):
-            self.obstructions[side] = (className, distance)
-        if obs.className in HIGHPRIORITIES:
+        obs.position = self.xToSide(x)
+        # if side in self.obstructions is False:
+        #     self.obstructions[side].append(obs)
+        self.obstructions[side].append(obs)
+        if obs.className in self.HIGHPRIORITIES:
             self.highprios.append(obj)
 
     def xToSide(self, xCoord):
         """TODO: Get proper coordinates for left/right/center"""
         if xCoord < 40:
-            return LEFT
+            return ObstructionMap.LEFT
         elif xCoord > 80:
-            return RIGHT
+            return ObstructionMap.RIGHT
         else:
-            return CENTER
+            return ObstructionMap.CENTER
 
     def getClosest(self):
         """NOTE
@@ -72,8 +73,9 @@ class ObstructionMap(object):
 
         closestObject = ObstructionInfo()
         for side in self.obstructions:
-            if this.obstructions[side].distance < closestObject.distance:
-                closestObject = self.obstructions[side]
+            for obs in self.obstructions[side]:
+                if obs.distance < closestObject.distance:
+                    closestObject = obs
 
         return closestObject
 
