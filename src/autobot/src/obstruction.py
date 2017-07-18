@@ -8,7 +8,7 @@ class ObstructionInfo(object):
         self.distance = 999
         self.position = 0
         self.className = ""
-
+    
 
 class ObstructionMap(object):
     """ TODO: Write down class information
@@ -25,7 +25,7 @@ class ObstructionMap(object):
     TOP = 'TOP'
     BOTTOM = 'BOTTOM'
     CENTER = 'CENTER'
-    HIGHPRIORITIES = ['chair', 'stop sign']
+    HIGHPRIORITIES = ['person', 'chair', 'stop sign']
 
     def __init__(self):
         self.obstructions = defaultdict(list)
@@ -50,7 +50,7 @@ class ObstructionMap(object):
         #     self.obstructions[side].append(obs)
         self.obstructions[side].append(obs)
         if obs.className in self.HIGHPRIORITIES:
-            self.highprios.append(obj)
+            self.highprios.append(obs)
 
     def xToSide(self, xCoord):
         """TODO: Get proper coordinates for left/right/center"""
