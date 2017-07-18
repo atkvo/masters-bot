@@ -23,6 +23,7 @@ class ObstructionMap(object):
     RIGHT = 1
     TOP = 2
     BOTTOM = 3
+    CENTER = 4
     HIGHPRIORITIES = ['chair', 'stop sign']
 
     def __init__(self):
@@ -43,12 +44,21 @@ class ObstructionMap(object):
         obs = ObstructionInfo()
         obs.className = className
         obs.distance = distance
-        obs.position = side
+        obs.position = xToSide(x)
         if (side in self.obstructions is False or
                 distance < self.obstructions[side].distance):
             self.obstructions[side] = (className, distance)
         if obs.className in HIGHPRIORITIES:
             self.highprios.append(obj)
+
+    def xToSide(self, xCoord):
+        """TODO: Get proper coordinates for left/right/center"""
+        if xCoord < 40:
+            return LEFT
+        elif xCoord > 80:
+            return RIGHT
+        else:
+            return CENTER
 
     def getClosest(self):
         """NOTE
