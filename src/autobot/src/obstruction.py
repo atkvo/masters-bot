@@ -8,7 +8,7 @@ class ObstructionInfo(object):
         self.distance = 999
         self.position = 0
         self.className = ""
-    
+
 
 class ObstructionMap(object):
     """ TODO: Write down class information
@@ -76,6 +76,20 @@ class ObstructionMap(object):
             for obs in self.obstructions[side]:
                 if obs.distance < closestObject.distance:
                     closestObject = obs
+
+        return closestObject
+
+    def getClosestOnSide(self, side):
+        if len(self.obstructions) is 0:
+            return None
+
+        if side not in self.obstructions:
+            return None
+
+        closestObject = ObstructionInfo()
+        for obs in self.obstructions[side]:
+            if obs.distance < closestObject.distance:
+                closestObject = obs
 
         return closestObject
 

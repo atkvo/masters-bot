@@ -34,7 +34,7 @@ PUB_DRIVE = rospy.Publisher('drive_parameters', drive_param, queue_size=10)
 OBJECT_MAP = ObstructionMap()
 
 
-def srvTogglePathFinder(state):
+def togglePathFinder(state):
     try:
         rospy.wait_for_service('togglePathFinder', timeout=0.2)
         srv = rospy.ServiceProxy('togglePathFinder', TogglePathFinder)
@@ -50,7 +50,7 @@ def stopCar():
     msg.velocity = 0
     msg.angle = 0
     PUB_DRIVE.publish(msg)
-    srvTogglePathFinder(False)
+    togglePathFinder(False)
 
 
 def setWallDist(wall, dist):
@@ -132,36 +132,32 @@ def onDecisionInterval(event):
     global OBJECT_MAP
     global PATH_STATE
 
-    closest = OBJECT_MAP.getClosest()
     dangers = OBJECT_MAP.getHighPriorities()
     if dangers is None and closest is None:
         return
 
-    hasIt, obstruction = hasObstruction('person', dangers)
+    hasPerson, obstruction = hasObstruction('person', dangers)
     # TODO: make sure person is in a certain X position before stopping
-    if hasIt and obstruction.distance < 2 and PATH_STATE.enabled:
+    if hasPerson and obstruction.distance < 2 and PATH_STATE.enabled:
         stopCar()
-    else:
-        setWallDist(0.5, PATH_STATE.wallToWatch)
-        srvTogglePathFinder(True)
+        OBJECT_MAP.clearMap()
+        return  # a person has priority over all
 
-    # wallToHug = PATH_STATE.wallToWatch
-    # if closest.position == ObstructionMap.LEFT:
-    #     wallToHug = wall_dist.WALL_RIGHT
-    # elif closest.position == ObstructionMap.RIGHT:
-    #     wallToHug = wall_dist.WALL_LEFT
-    # elif closest.position == ObstructionMap.CENTER:
-    #     # Increase distance from the wall?
-    #     setWallDist(wallToHug, PATH_STATE.desiredTrajectory + 0.25)
+    wallHug = PATH_STATE.wallToWatch
+    sideToCheck = (ObstructionMap.RIGHT if
+                   PATH_STATE.wallToWatch == wall_dist.WALL_RIGHT
+                   else ObstructionMap.LEFT)
 
-    # if closest.className == "DOOR":
-    #     setWallDist(wallToHug, 2)
-    # elif closest.className == "CHAIR":
-    #     setWallDist(wallToHug, 0)
-    #     pass
+    closest = OBJECT_MAP.getClosestOnSide(sideToCheck)
+    if closest is not None and closest.className == 'door':
+        setWallDist(2.5, PATH_STATE.wallToWatch)
+        OBJECT_MAP.clearMap()
+        return
 
+    # Fallback to normal wall route mode
+    setWallDist(PATH_STATE.desiredTrajectory, PATH_STATE.wallToWatch)
+    togglePathFinder(True)
     OBJECT_MAP.clearMap()
-    pass
 
 
 def onObjectDetected(msg):
