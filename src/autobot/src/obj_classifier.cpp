@@ -9,7 +9,8 @@
 #include <sensor_msgs/image_encodings.h>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
-
+#include <autobot/detected_img.h>
+#include <autobot/detected_object.h>
 #include <stdio.h>
 #include <signal.h>
 #include <unistd.h>
@@ -45,7 +46,8 @@ class ObjectClassifier
 {
 	ros::NodeHandle nh_;
 	image_transport::ImageTransport it_;
-	image_transport::Subscriber image_sub_;
+	ros::Subscriber image_sub_;
+    ros::Publisher class_pub_;
     cv::Mat cv_im;
     cv_bridge::CvImagePtr cv_ptr;
     std::chrono::steady_clock::time_point prev;
@@ -76,8 +78,9 @@ public:
 		// Subscrive to input video feed and publish output video feed
 		//image_sub_ = it_.subscribe("/left/image_rect_color", 2,
 		  //&ObjectClassifier::imageCb, this);
-        image_sub_ = it_.subscribe("/detected_image", 2,
+        image_sub_ = nh_.subscribe("/detected_image", 2,
 		  &ObjectClassifier::imageCb, this);
+        class_pub_ = nh_.advertise<autobot::detected_object>("/detected_object", 2);
 
 
 		cv::namedWindow(OPENCV_WINDOW);
@@ -103,14 +106,16 @@ public:
 		cv::destroyWindow(OPENCV_WINDOW);
 	}
 
-	void imageCb(const sensor_msgs::ImageConstPtr& msg)
+	void imageCb(const autobot::detected_img& detect_msg)
 	{
 
 		try
 		{
-			cv_ptr = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::BGR8);
+            
+			cv_ptr = cv_bridge::toCvCopy(detect_msg.img, sensor_msgs::image_encodings::BGR8);
 			cv_im = cv_ptr->image;
-			cv_im.convertTo(cv_im,CV_32FC3);
+			cv::resize(cv_im,cv_im,cv::Size(224,224));
+            cv_im.convertTo(cv_im,CV_32FC3);
 
 			// convert color
 			cv::cvtColor(cv_im,cv_im,CV_BGR2RGBA);
@@ -168,8 +173,16 @@ public:
         cv_im.convertTo(cv_im,CV_8UC3);
         cv::cvtColor(cv_im,cv_im,CV_RGBA2BGR);
         
+        autobot::detected_object detected_object;
+        detected_object.className.data = class_name;
+        detected_object.depthImg = detect_msg.depthImg;
+        detected_object.box = detect_msg.box;
+
+        class_pub_.publish<autobot::detected_object>(detected_object);
+        
         // draw class string
         cv::putText(cv_im, class_name, cv::Point(60,60), cv::FONT_HERSHEY_PLAIN, 3.0, cv::Scalar(0,0,255),3);
+        
         
         
 		// Update GUI Window

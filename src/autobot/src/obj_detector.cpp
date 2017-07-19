@@ -8,6 +8,8 @@
 #include <cv_bridge/cv_bridge.h>
 #include <sensor_msgs/image_encodings.h>
 #include <autobot/compound_img.h>
+#include <autobot/detected_img.h>
+#include <autobot/bounding_box.h>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/highgui/highgui.hpp>
 
@@ -48,7 +50,7 @@ class ObjectDetector
 	ros::NodeHandle nh_;
 	image_transport::ImageTransport it_;
 	ros::Subscriber image_sub_;
-    image_transport::Publisher detect_img_pub;
+    ros::Publisher detect_img_pub;
     cv::Mat cv_im;
     cv_bridge::CvImagePtr cv_ptr;
     std::chrono::steady_clock::time_point prev;
@@ -80,7 +82,7 @@ public:
 		  //&ObjectDetector::imageCb, this);
         image_sub_ = nh_.subscribe("/compound_img", 2,
 		  &ObjectDetector::imageCb, this);
-        detect_img_pub = it_.advertise("/detected_image", 2);
+        detect_img_pub = nh_.advertise<autobot::detected_img>("/detected_image", 2);
 
 		cv::namedWindow(OPENCV_WINDOW);
 
@@ -264,10 +266,23 @@ public:
                 crop_height = (float)imgHeight - origin_y - 1.0;
             }
             printf("AFTER : origin_x: %f origin_y: %f crop_width: %f crop_height: %f\n",origin_x, origin_y, crop_width, crop_height);
-             
             cv::Mat croppedImage = cv_im(cv::Rect(origin_x, origin_y, crop_width, crop_height));
-            msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", croppedImage).toImageMsg();
-            detect_img_pub.publish(msg);
+            sensor_msgs::ImagePtr img_msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", croppedImage).toImageMsg();
+            boost::shared_ptr<autobot::detected_img> detected_img = boost::make_shared<autobot::detected_img>();
+            boost::shared_ptr<autobot::bounding_box> bbox = boost::make_shared<autobot::bounding_box>();
+            
+                        bbox->origin_x = origin_x;
+            bbox->origin_y = origin_y;
+            bbox->height = crop_height;
+            bbox->width = crop_width;
+            
+            detected_img->img = *img_msg.get();
+            detected_img->depthImg = cp_msg.depthImg;
+            detected_img->box = *bbox.get();
+
+
+
+            detect_img_pub.publish<autobot::detected_img>(detected_img);
             cv::imshow("crop", croppedImage);
             cv::waitKey(1);
         }
