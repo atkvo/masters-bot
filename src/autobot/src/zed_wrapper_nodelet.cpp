@@ -468,8 +468,12 @@ namespace autobot {
                 runParams.enable_point_cloud = false;
                 if (cloud_SubNumber > 0)
                     runParams.enable_point_cloud = true;
+                
+                ros::Time t = ros::Time::now(); // Get current time
+
                 // Run the loop only if there is some subscribers
-                if (runLoop) {
+                
+                if (true) {
                     if (odom_SubNumber > 0 && !tracking_activated) { //Start the tracking
                         if (odometry_DB != "" && !file_exist(odometry_DB)) {
                             odometry_DB = "";
@@ -482,7 +486,6 @@ namespace autobot {
                         tracking_activated = false;
                     }
                     computeDepth = (depth_SubNumber + cloud_SubNumber + odom_SubNumber) > 0; // Detect if one of the subscriber need to have the depth information
-                    ros::Time t = ros::Time::now(); // Get current time
 
                     grabbing = true;
                     if (computeDepth) {
@@ -579,13 +582,15 @@ namespace autobot {
                         publishCamInfo(depth_cam_info_msg, pub_depth_cam_info, t);
                         publishDepth(toCVMat(depthZEDMat), pub_depth, depth_frame_id, t); // in meters
                     }
-                    
-                    if (compound_SubNumber > 0) {
+                    // subscription-based publishing not working with vanilla ros::publisher so turning off 
+                    // for compound image
+                    // if (compound_SubNumber > 0) {
                         zed->retrieveImage(leftZEDMat, sl::VIEW_LEFT);
                         cv::cvtColor(toCVMat(leftZEDMat), leftImRGB, CV_RGBA2RGB);
                         zed->retrieveMeasure(depthZEDMat, sl::MEASURE_DEPTH);
                         publishDepthPlusImage(leftImRGB, toCVMat(depthZEDMat), pub_compound_img, left_frame_id, depth_frame_id, t); // in meters
-                    }
+                    //}
+
 
                     // Publish the point cloud if someone has subscribed to
                     //if (cloud_SubNumber > 0) {
@@ -612,6 +617,8 @@ namespace autobot {
                     //publishTrackedFrame(pose, transform_odom_broadcaster, odometry_transform_frame_id, ros::Time::now()); //publish the tracked Frame before the sleep
                     std::this_thread::sleep_for(std::chrono::milliseconds(10)); // No subscribers, we just wait
                 }
+
+                
             } // while loop
             zed.reset();
         }
