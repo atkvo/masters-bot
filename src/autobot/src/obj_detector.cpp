@@ -21,8 +21,8 @@
 #include <jetson-inference/cudaMappedMemory.h>
 #include <jetson-inference/cudaNormalize.h>
 #include <jetson-inference/cudaFont.h>
-
 #include <jetson-inference/detectNet.h>
+#include <sl/Camera.hpp>
 
 
 #define DEFAULT_CAMERA -1	// -1 for onboard camera, or change to index of /dev/video V4L2 camera (>=0)
@@ -30,6 +30,7 @@
 using namespace std;
 
 bool signal_recieved = false;
+int rate = 15;
 
 //void sig_handler(int signo)
 //{
@@ -40,6 +41,40 @@ bool signal_recieved = false;
 	//}
 //}
 
+cv::Mat toCVMat(sl::Mat &mat) {
+    if (mat.getMemoryType() == sl::MEM_GPU)
+        mat.updateCPUfromGPU();
+
+    int cvType;
+    switch (mat.getDataType()) {
+        case sl::MAT_TYPE_32F_C1:
+            cvType = CV_32FC1;
+            break;
+        case sl::MAT_TYPE_32F_C2:
+            cvType = CV_32FC2;
+            break;
+        case sl::MAT_TYPE_32F_C3:
+            cvType = CV_32FC3;
+            break;
+        case sl::MAT_TYPE_32F_C4:
+            cvType = CV_32FC4;
+            break;
+        case sl::MAT_TYPE_8U_C1:
+            cvType = CV_8UC1;
+            break;
+        case sl::MAT_TYPE_8U_C2:
+            cvType = CV_8UC2;
+            break;
+        case sl::MAT_TYPE_8U_C3:
+            cvType = CV_8UC3;
+            break;
+        case sl::MAT_TYPE_8U_C4:
+            cvType = CV_8UC4;
+            break;
+    }
+    return cv::Mat((int) mat.getHeight(), (int) mat.getWidth(), cvType, mat.getPtr<sl::uchar1>(sl::MEM_CPU), mat.getStepBytes(sl::MEM_CPU));
+}
+
 static const std::string OPENCV_WINDOW = "Image post bridge conversion";
 static const std::string OPENCV_WINDOW2 = "Image post bit depth conversion";
 static const std::string OPENCV_WINDOW3 = "Image post color conversion";
@@ -48,12 +83,15 @@ static const std::string OPENCV_WINDOW4 = "Image window";
 class ObjectDetector
 {
 	ros::NodeHandle nh_;
-	image_transport::ImageTransport it_;
-	ros::Subscriber image_sub_;
     ros::Publisher detect_img_pub;
-    cv::Mat cv_im;
     cv_bridge::CvImagePtr cv_ptr;
     std::chrono::steady_clock::time_point prev;
+
+    // zed object
+    sl::InitParameters param;
+    sl::Camera zed;
+    sl::ERROR_CODE err;
+
 
 	float confidence = 0.0f;
 
@@ -74,14 +112,28 @@ class ObjectDetector
 	size_t imgSize;
 
 public:
-	ObjectDetector(int argc, char** argv ) : it_(nh_)
+	ObjectDetector(int argc, char** argv )
 	{
 		cout << "start constructor" << endl;
-		// Subscrive to input video feed and publish output video feed
-		//image_sub_ = it_.subscribe("/left/image_rect_color", 2,
-		  //&ObjectDetector::imageCb, this);
-        image_sub_ = nh_.subscribe("/compound_img", 2,
-		  &ObjectDetector::imageCb, this);
+
+        // Try to initialize the ZED
+        param.camera_fps = rate;
+        param.camera_resolution = sl::RESOLUTION_VGA;
+        param.camera_linux_id = 0;
+
+
+        param.coordinate_units = sl::UNIT_METER;
+        param.coordinate_system = sl::COORDINATE_SYSTEM_IMAGE;
+        param.depth_mode = static_cast<sl::DEPTH_MODE> (1);
+        param.sdk_verbose = true;
+        param.sdk_gpu_id = -1;
+
+        err = zed.open(param);
+        cout << errorCode2str(err) << endl;
+        
+        
+        cout << "ZED OPENED" << endl;
+
         detect_img_pub = nh_.advertise<autobot::detected_img>("/detected_image", 2);
 
 		cv::namedWindow(OPENCV_WINDOW);
@@ -132,45 +184,49 @@ public:
 		cv::destroyWindow(OPENCV_WINDOW);
 	}
 
-	void imageCb(const autobot::compound_img& cp_msg)
+	void detect()
 	{
-        //ROS_INFO("callback called");
-        //boost::shared_ptr<sensor_msgs::Image> cp_shared(&cp_msg.depthImg);
-        //sensor_msgs::ImageConstPtr msg = cp_shared;
+        // Get the parameters of the ZED images
+        int zed_width = zed.getResolution().width;
+        int zed_height = zed.getResolution().height;
+        
+        err = zed.grab();
+        
+        
+        
+        sl::Mat leftZEDMat, depthZEDMat;
 
-		try
-		{
-			cv_ptr = cv_bridge::toCvCopy(cp_msg.img, sensor_msgs::image_encodings::BGR8);
-			cv_im = cv_ptr->image;
-            
-			cv_im.convertTo(cv_im,CV_32FC3);
+        cv::Size cvSize(zed_width, zed_height);
+        //cv::Mat leftImage(cvSize, CV_8UC3);
+        //cv::Mat depthImage(cvSize, CV_8UC3);
+        zed.retrieveImage(leftZEDMat, sl::VIEW_LEFT);
+        //cv::cvtColor(toCVMat(leftZEDMat), leftImage, CV_RGBA2RGB);
+        cv::Mat leftImage = toCVMat(leftZEDMat);
+        zed.retrieveMeasure(depthZEDMat, sl::MEASURE_DEPTH);
+        cv::Mat depthImage = toCVMat(depthZEDMat);
 
-			// convert color
-			cv::cvtColor(cv_im,cv_im,CV_BGR2RGBA);
+        
+        leftImage.convertTo(leftImage,CV_32FC3);
+        // convert color
+        cv::cvtColor(leftImage,leftImage,CV_BGR2RGBA);
 
-		}
-		catch (cv_bridge::Exception& e)
-		{
-		  ROS_ERROR("cv_bridge exception: %s", e.what());
-		  return;
-		}
-
+        //cv::imshow("SL::CAMERA",leftImage);
 
         // allocate GPU data if necessary
         if(!gpu_data){
             ROS_INFO("first allocation");
-            CUDA(cudaMalloc(&gpu_data, cv_im.rows*cv_im.cols * sizeof(float4)));
-        }else if(imgHeight != cv_im.rows || imgWidth != cv_im.cols){
+            CUDA(cudaMalloc(&gpu_data, leftImage.rows*leftImage.cols * sizeof(float4)));
+        }else if(imgHeight != leftImage.rows || imgWidth != leftImage.cols){
             ROS_INFO("re allocation");
             // reallocate for a new image size if necessary
             CUDA(cudaFree(gpu_data));
-            CUDA(cudaMalloc(&gpu_data, cv_im.rows*cv_im.cols * sizeof(float4)));
+            CUDA(cudaMalloc(&gpu_data, leftImage.rows*leftImage.cols * sizeof(float4)));
         }
 
-		imgHeight = cv_im.rows;
-		imgWidth = cv_im.cols;
-		imgSize = cv_im.rows*cv_im.cols * sizeof(float4);
-		float4* cpu_data = (float4*)(cv_im.data);
+		imgHeight = leftImage.rows;
+		imgWidth = leftImage.cols;
+		imgSize = leftImage.rows*leftImage.cols * sizeof(float4);
+		float4* cpu_data = (float4*)(leftImage.data);
 
 		// copy to device
 		CUDA(cudaMemcpy(gpu_data, cpu_data, imgSize, cudaMemcpyHostToDevice));
@@ -194,7 +250,7 @@ public:
 				float* bb = bbCPU + (n * 4);
 
 				printf("bounding box %i   (%f, %f)  (%f, %f)  w=%f  h=%f\n", n, bb[0], bb[1], bb[2], bb[3], bb[2] - bb[0], bb[3] - bb[1]);
-                cv::rectangle( cv_im, cv::Point( bb[0], bb[1] ), cv::Point( bb[2], bb[3]), cv::Scalar( 255, 55, 0 ), +1, 4 );
+                cv::rectangle( leftImage, cv::Point( bb[0], bb[1] ), cv::Point( bb[2], bb[3]), cv::Scalar( 255, 55, 0 ), +1, 4 );
 
 			}
 
@@ -213,11 +269,12 @@ public:
 
 		// update image back to original
 
-        cv_im.convertTo(cv_im,CV_8UC3);
-        cv::cvtColor(cv_im,cv_im,CV_RGBA2BGR);
+        leftImage.convertTo(leftImage,CV_8UC3);
+        cv::cvtColor(leftImage,leftImage,CV_RGBA2BGR);
 
 		// Update GUI Window
-        cv::imshow(OPENCV_WINDOW, cv_im);
+        cv::imshow(OPENCV_WINDOW, leftImage);
+        cv::imshow("depth", depthImage);
 		cv::waitKey(1);
 
         for( int n=0; n < numBoundingBoxes; n++ ) {
@@ -232,58 +289,84 @@ public:
             float origin_x = bb[0];
             float origin_y = bb[1];
             
+            // placeholders for squared boxes to classify pics
+            float sq_crop_width;
+            float sq_crop_height;
+            float sq_origin_x;
+            float sq_origin_y;
+            
+
             printf("imgWidth: %u imgHeight: %u\n",imgWidth,imgHeight);
-            printf("BEFORE: origin_x: %f origin_y: %f crop_width: %f crop_height: %f\n",origin_x, origin_y, crop_width, crop_height);
+            // printf("BEFORE: origin_x: %f origin_y: %f crop_width: %f crop_height: %f\n",origin_x, origin_y, crop_width, crop_height);
             
             if (crop_width < crop_height) {
                 float diff = crop_height - crop_width;
                 printf("diff: %f\n",diff);
-                origin_x = origin_x - (diff / 2.0);
-                crop_width = crop_width + (diff / 2.0);
-
+                sq_origin_x = origin_x - (diff / 2.0);
+                sq_crop_width = crop_width + (diff / 2.0);
+                sq_crop_height = crop_height;
             } else if (crop_width > crop_height) {
                 float diff = crop_width - crop_height;
                 printf("diff: %f\n",diff);
-                origin_y = origin_y - (diff / 2.0);
-                crop_height = crop_height + (diff / 2.0);
+                sq_origin_y = origin_y - (diff / 2.0);
+                sq_crop_height = crop_height + (diff / 2.0);
+                sq_crop_width = crop_width;
+            } else {
+                sq_origin_x = origin_x; 
+                sq_crop_width = crop_width;
+                sq_crop_height = crop_height;
+                
             }
-            printf("MIDDLE: origin_x: %f origin_y: %f crop_width: %f crop_height: %f\n",origin_x, origin_y, crop_width, crop_height);
+            // printf("MIDDLE: origin_x: %f origin_y: %f crop_width: %f crop_height: %f\n",origin_x, origin_y, crop_width, crop_height);
 
             
-            if (origin_x < 0.0) {
-                origin_x = 0.0;
+            if (sq_origin_x < 0.0) {
+                sq_origin_x = 0.0;
             }
             
-            if (origin_y < 0.0) {
-                origin_y = 0.0;
+            if (sq_origin_y < 0.0) {
+                sq_origin_y = 0.0;
             }
             
             if (origin_x + crop_width >= (float)imgWidth ) {
-                crop_width = (float)imgWidth - origin_x - 1.0;
+                sq_crop_width = (float)imgWidth - sq_origin_x - 1.0;
             }
             
-            if (origin_y + crop_height >= (float)imgHeight) {
-                crop_height = (float)imgHeight - origin_y - 1.0;
+            if (sq_origin_y + sq_crop_height >= (float)imgHeight) {
+                sq_crop_height = (float)imgHeight - sq_origin_y - 1.0;
             }
+            
+
             printf("AFTER : origin_x: %f origin_y: %f crop_width: %f crop_height: %f\n",origin_x, origin_y, crop_width, crop_height);
-            cv::Mat croppedImage = cv_im(cv::Rect(origin_x, origin_y, crop_width, crop_height));
+            
+            // apply squared bounding box on 
+            cout << "croppeing image" << endl;
+            cv::Mat croppedImage = leftImage(cv::Rect(sq_origin_x, sq_origin_y, sq_crop_width, sq_crop_height));
+            // take the cropped version of the original bounding box on the depth image
+            cout << "cropping depth" << endl;
+            cv::Mat croppedDepthImage = depthImage(cv::Rect(origin_x, origin_y, crop_width, crop_height));
+
+            //cv::resize(croppedImage, croppedImage, cv::Size(224,224));
             sensor_msgs::ImagePtr img_msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", croppedImage).toImageMsg();
+            sensor_msgs::ImagePtr depth_msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", croppedDepthImage).toImageMsg();
             boost::shared_ptr<autobot::detected_img> detected_img = boost::make_shared<autobot::detected_img>();
             boost::shared_ptr<autobot::bounding_box> bbox = boost::make_shared<autobot::bounding_box>();
             
-                        bbox->origin_x = origin_x;
+            bbox->origin_x = origin_x;
             bbox->origin_y = origin_y;
             bbox->height = crop_height;
             bbox->width = crop_width;
             
             detected_img->img = *img_msg.get();
-            detected_img->depthImg = cp_msg.depthImg;
+            detected_img->depthImg = *depth_msg.get();
             detected_img->box = *bbox.get();
 
-
+    
 
             detect_img_pub.publish<autobot::detected_img>(detected_img);
+            cv::imshow("crop depth", croppedDepthImage);
             cv::imshow("crop", croppedImage);
+
             cv::waitKey(1);
         }
 
@@ -296,7 +379,7 @@ int main( int argc, char** argv ) {
 
 	ros::init(argc, argv, "obj_detector");
     ros::NodeHandle nh;
-
+    ros::Rate detect_rate(rate);
 
 	for( int i=0; i < argc; i++ )
 		printf("%i [%s]  ", i, argv[i]);
@@ -304,7 +387,11 @@ int main( int argc, char** argv ) {
 	printf("\n\n");
 
 	ObjectDetector ic(argc, argv);
-
+    
+    while(1) {
+        ic.detect();
+        detect_rate.sleep();
+    }
 	ros::spin();
 
 	return 0;
