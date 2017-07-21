@@ -9,6 +9,7 @@ from autobot.srv import *
 from sensor_msgs.msg import Image
 from pathFinder import PathConfig
 from obstruction import *
+from stopsign import *
 
 import cv2
 import numpy as np
@@ -32,6 +33,7 @@ TODO:
 PATH_STATE = PathConfig()
 PUB_DRIVE = rospy.Publisher('drive_parameters', drive_param, queue_size=10)
 OBJECT_MAP = ObstructionMap()
+STOP_LOGIC = StopSign()
 
 
 def togglePathFinder(state):
@@ -131,6 +133,7 @@ def onDecisionInterval(event):
     """
     global OBJECT_MAP
     global PATH_STATE
+    global STOP_LOGIC
 
     dangers = OBJECT_MAP.getHighPriorities()
     if dangers is None and closest is None:
@@ -142,6 +145,17 @@ def onDecisionInterval(event):
         stopCar()
         OBJECT_MAP.clearMap()
         return  # a person has priority over all
+
+    hasStop, stopSign = hasObstruction('stop sign', dangers)
+    if (hasStop and stopSign.distance < 2 and
+            STOP_LOGIC.state != StopStates.IGNORE_STOP_SIGNS):
+        if STOP_LOGIC.state == StopStates.NORMAL:
+            print ' STOPPING CAR '
+            stopCar()
+            STOP_LOGIC.stopSignDetected()
+
+        OBJECT_MAP.clearMap()
+        return
 
     wallHug = PATH_STATE.wallToWatch
     sideToCheck = (ObstructionMap.RIGHT if
