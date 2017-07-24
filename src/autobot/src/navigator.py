@@ -200,8 +200,9 @@ def onObjectDetected(msg):
 
 if __name__ == '__main__':
     DECISION_RATE_SEC = 0.5
+    rospy.init_node('navigator', anonymous=True)
     rospy.Subscriber("pathFinderStatus", pathFinderState, pathFinderUpdated)
-    rospy.Subscriber("drive_parameters", drive_param, driveParamsUpdated)
+    # rospy.Subscriber("drive_parameters", drive_param, driveParamsUpdated)
     rospy.Subscriber("object_detector", detected_object, onObjectDetected)
     rospy.Timer(rospy.Duration(DECISION_RATE_SEC), callback=onDecisionInterval)
     rospy.spin()
