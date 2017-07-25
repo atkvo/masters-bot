@@ -59,8 +59,8 @@ def HandleAdjustWallDist(req):
     """
     global PATH_CONFIG
 
-    print " wall {}".format(req.cmd.wall)
-    print " dist {}".format(req.cmd.dist)
+    # print " wall {}".format(req.cmd.wall)
+    # print " dist {}\n".format(req.cmd.dist)
 
     resp = wall_dist()
     isValid = req.cmd.dist >= 0
@@ -70,7 +70,9 @@ def HandleAdjustWallDist(req):
         Service client can send an invalid wall or distance
         query current settings
         """
-        PATH_CONFIG.wallToWatch = req.cmd.wall
+        if req.cmd.wall is not wall_dist.WALL_UNDEF:
+            PATH_CONFIG.wallToWatch = req.cmd.wall
+
         PATH_CONFIG.desiredTrajectory = req.cmd.dist
     else:
         isValid = False
