@@ -103,6 +103,7 @@ def shadeToDepth(color):
     minDistance = 0.7
     maxDistance = 20
     maxColor = 255
+    color = np.average(color, axis=0)
     # depth = mx + b
     m = (minDistance - maxDistance)/maxColor
     x = color
