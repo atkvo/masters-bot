@@ -48,11 +48,11 @@ def togglePathFinder(state):
 
 def stopCar():
     global PUB_DRIVE
+    togglePathFinder(False)
     msg = drive_param()
     msg.velocity = 0
     msg.angle = 0
     PUB_DRIVE.publish(msg)
-    togglePathFinder(False)
 
 
 def setWallDist(dist, wall):
@@ -186,7 +186,6 @@ def onObjectDetected(msg):
     m.depthImg: image
     m.box: bounding_box
     """
-    print 'object detected'
     bridge = CvBridge()
     try:
         depthMap = bridge.imgmsg_to_cv2(msg.depthImg,

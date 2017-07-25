@@ -66,9 +66,9 @@ def modVelocity(incr):
 
 def zeroVelocity():
     global velocity
+    srvTogglePathFinder(False)
     velocity = 0
     stdscr.addstr(4, 16, '%.2f' % velocity)
-    srvTogglePathFinder(False)
 
 
 def modAngle(incr):
