@@ -18,22 +18,13 @@ from cv_bridge import CvBridge, CvBridgeError
 """
 This node is responsible for configuring the pathFinder node
 when an object is detected.
-
-TODO:
-- [ ] Check other todos spread throughout code
-- [ ] What are we avoiding via vision
-        LiDAR will handle obvious obstructions like people, boxes
-            backpacks, etc.
-        Vision should be able to look out for things like chairs which
-            can slip past LiDAR (legs of the chair are thin)
-- [ ] Making decisions based on a simple "object is on the left/right"
-        is primitive. Should decisions be made with a finer scale?
-        See callback below for more notes
 """
+
 PATH_STATE = PathConfig()
 PUB_DRIVE = rospy.Publisher('drive_parameters', drive_param, queue_size=10)
 OBJECT_MAP = ObstructionMap()
 STOP_LOGIC = StopSign()
+DEFAULT_WALL_DIST = 0.5
 
 
 def togglePathFinder(state):
@@ -65,7 +56,7 @@ def setWallDist(dist, wall):
         resp = adjustWall(cmd)
         return resp
     except rospy.ROSException, e:
-        # print "Service called failed: %s" % e
+        print "Service called failed: %s" % e
         pass
 
 
@@ -120,18 +111,7 @@ def hasObstruction(className, list):
 
 
 def onDecisionInterval(event):
-    """
-    Makes pathing decision based on objects detected
-    TODO:
-    - [ ] When to prefer hugging the current wall vs moving
-          to the apposite wall
-          - Maybe when multiple objects are crowding the X side
-    - [ ] Get list of how far/close to wall to get depending on class
-    - [ ] May need a hierarchy of "priorities". E.g.
-            if a CHAIR is in the view, stay clear of it even if there
-            is a closed door coming up close
-            if a stop sign is close, stop the car for a bit?
-    """
+    """Makes pathing decision based on objects detected"""
     global OBJECT_MAP
     global PATH_STATE
     global STOP_LOGIC
@@ -151,7 +131,6 @@ def onDecisionInterval(event):
     if (hasStop and stopSign.distance < 2 and
             STOP_LOGIC.state != StopStates.IGNORE_STOP_SIGNS):
         if STOP_LOGIC.state == StopStates.NORMAL:
-            print ' STOPPING CAR '
             stopCar()
             STOP_LOGIC.stopSignDetected()
 
@@ -171,6 +150,8 @@ def onDecisionInterval(event):
 
     # Fallback to normal wall route mode
     # Do you want to revert to the default distance here?
+    # global DEFAULT_WALL_DIST
+    # setWallDist(DEFAULT_WALL_DIST, wall_dist.WALL_UNDEF)
     setWallDist(PATH_STATE.desiredTrajectory, wall_dist.WALL_UNDEF)
     togglePathFinder(True)
     pathStateUpdated = False
@@ -210,3 +191,4 @@ if __name__ == '__main__':
     rospy.Subscriber("object_detector", detected_object, onObjectDetected)
     rospy.Timer(rospy.Duration(DECISION_RATE_SEC), callback=onDecisionInterval)
     rospy.spin()
+
