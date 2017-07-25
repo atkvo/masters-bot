@@ -137,6 +137,8 @@ def onDecisionInterval(event):
     global STOP_LOGIC
 
     dangers = OBJECT_MAP.getHighPriorities()
+    if STOP_LOGIC.state == StopStates.FULL_STOP:
+        return
 
     hasPerson, obstruction = hasObstruction('person', dangers)
     # TODO: make sure person is in a certain X position before stopping
