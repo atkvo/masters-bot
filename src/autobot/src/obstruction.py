@@ -6,7 +6,7 @@ class ObstructionInfo(object):
 
     def __init__(self):
         self.distance = 999
-        self.position = 0
+        self.coord = (0, 0)
         self.className = ""
 
 
@@ -41,13 +41,14 @@ class ObstructionMap(object):
         # Do objects closest to the car get priority?
         self.obstructions[k] = (className, distance)
         """
-        side = ObstructionMap.LEFT
+        # side = ObstructionMap.LEFT
+        side = self.xToSide(x)
+
         obs = ObstructionInfo()
         obs.className = className
         obs.distance = distance
-        obs.position = self.xToSide(x)
-        # if side in self.obstructions is False:
-        #     self.obstructions[side].append(obs)
+        obs.position = (x, y)
+
         self.obstructions[side].append(obs)
         if obs.className in self.HIGHPRIORITIES:
             self.highprios.append(obs)
