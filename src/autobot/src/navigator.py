@@ -55,7 +55,7 @@ def stopCar():
     togglePathFinder(False)
 
 
-def setWallDist(wall, dist):
+def setWallDist(dist, wall):
     try:
         rospy.wait_for_service('adjustWallDist')
         adjustWall = rospy.ServiceProxy('adjustWallDist', AdjustWallDist)
@@ -165,11 +165,12 @@ def onDecisionInterval(event):
 
     closest = OBJECT_MAP.getClosestOnSide(sideToCheck)
     if closest is not None and closest.className == 'door':
-        setWallDist(2.5, PATH_STATE.WALL_UNDEF)
+        setWallDist(4.0, wall_dist.WALL_UNDEF)
         OBJECT_MAP.clearMap()
         return
 
     # Fallback to normal wall route mode
+    # Do you want to revert to the default distance here?
     setWallDist(PATH_STATE.desiredTrajectory, wall_dist.WALL_UNDEF)
     togglePathFinder(True)
     pathStateUpdated = False
