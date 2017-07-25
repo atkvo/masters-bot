@@ -83,7 +83,7 @@ def convertWallToString(wall):
         return "Unknown"
 
 
-def pathFinderUpdated(status):
+def onPathFinderUpdated(status):
     global PATH_STATE
     PATH_STATE.velocity = status.velocity
     PATH_STATE.wallToWatch = status.hug.wall
@@ -137,12 +137,10 @@ def onDecisionInterval(event):
     global STOP_LOGIC
 
     dangers = OBJECT_MAP.getHighPriorities()
-    if dangers is None and closest is None:
-        return
 
     hasPerson, obstruction = hasObstruction('person', dangers)
     # TODO: make sure person is in a certain X position before stopping
-    if hasPerson and obstruction.distance < 2 and PATH_STATE.enabled:
+    if hasPerson and obstruction.distance < 2:
         stopCar()
         OBJECT_MAP.clearMap()
         return  # a person has priority over all
@@ -165,13 +163,15 @@ def onDecisionInterval(event):
 
     closest = OBJECT_MAP.getClosestOnSide(sideToCheck)
     if closest is not None and closest.className == 'door':
-        setWallDist(2.5, PATH_STATE.wallToWatch)
+        setWallDist(2.5, PATH_STATE.WALL_UNDEF)
         OBJECT_MAP.clearMap()
         return
 
     # Fallback to normal wall route mode
-    setWallDist(PATH_STATE.desiredTrajectory, PATH_STATE.wallToWatch)
+    setWallDist(PATH_STATE.desiredTrajectory, wall_dist.WALL_UNDEF)
     togglePathFinder(True)
+    pathStateUpdated = False
+
     OBJECT_MAP.clearMap()
 
 
@@ -183,6 +183,7 @@ def onObjectDetected(msg):
     m.depthImg: image
     m.box: bounding_box
     """
+    print 'object detected'
     bridge = CvBridge()
     try:
         depthMap = bridge.imgmsg_to_cv2(msg.depthImg,
@@ -202,7 +203,7 @@ def onObjectDetected(msg):
 if __name__ == '__main__':
     DECISION_RATE_SEC = 0.5
     rospy.init_node('navigator', anonymous=True)
-    rospy.Subscriber("pathFinderStatus", pathFinderState, pathFinderUpdated)
+    rospy.Subscriber("pathFinderStatus", pathFinderState, onPathFinderUpdated)
     # rospy.Subscriber("drive_parameters", drive_param, driveParamsUpdated)
     rospy.Subscriber("object_detector", detected_object, onObjectDetected)
     rospy.Timer(rospy.Duration(DECISION_RATE_SEC), callback=onDecisionInterval)
