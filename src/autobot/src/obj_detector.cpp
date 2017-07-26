@@ -54,7 +54,7 @@ class ObjectDetector
     cv::Mat cv_im;
     cv_bridge::CvImagePtr cv_ptr;
     std::chrono::steady_clock::time_point prev;
-
+    image_transport::Subscriber dummysub;
 	float confidence = 0.0f;
 
 
@@ -83,7 +83,7 @@ public:
         image_sub_ = nh_.subscribe("/compound_img", 2,
 		  &ObjectDetector::imageCb, this);
         detect_img_pub = nh_.advertise<autobot::detected_img>("/detected_image", 2);
-
+        dummysub = it_.subscribe("depth/depth_registered", 1, &ObjectDetector::dummy, this);
 		cv::namedWindow(OPENCV_WINDOW);
 
 		cout << "Named a window" << endl;
@@ -131,6 +131,10 @@ public:
 	{
 		cv::destroyWindow(OPENCV_WINDOW);
 	}
+    
+    void dummy(const sensor_msgs::ImageConstPtr& msg) {
+        
+    }
 
 	void imageCb(const autobot::compound_img& cp_msg)
 	{
