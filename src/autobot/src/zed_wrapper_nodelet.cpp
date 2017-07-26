@@ -577,7 +577,9 @@ namespace autobot {
                     //}
 
                      //Publish the depth image if someone has subscribed to
+                    //if (depth_SubNumber > 0) {
                     if (depth_SubNumber > 0) {
+
                         zed->retrieveMeasure(depthZEDMat, sl::MEASURE_DEPTH);
                         publishCamInfo(depth_cam_info_msg, pub_depth_cam_info, t);
                         publishDepth(toCVMat(depthZEDMat), pub_depth, depth_frame_id, t); // in meters
