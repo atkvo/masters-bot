@@ -184,7 +184,7 @@ def onObjectDetected(msg):
 
 
 if __name__ == '__main__':
-    DECISION_RATE_SEC = 0.5
+    DECISION_RATE_SEC = 0.70
     rospy.init_node('navigator', anonymous=True)
     rospy.Subscriber("pathFinderStatus", pathFinderState, onPathFinderUpdated)
     # rospy.Subscriber("drive_parameters", drive_param, driveParamsUpdated)
