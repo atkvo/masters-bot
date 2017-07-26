@@ -171,8 +171,11 @@ def onObjectDetected(msg):
     try:
         depthMap = bridge.imgmsg_to_cv2(msg.depthImg,
                                         desired_encoding="passthrough")
-        crop = depthMap[msg.box.origin_y: msg.box.origin_y + msg.box.height,
-                        msg.box.origin_x: msg.box.origin_x + msg.box.width]
+        # Get the center crop of the boxed image
+        startY = int(msg.box.height//4)
+        startX = int(msg.box.width//4)
+        crop = depthMap[startY: startY + int(msg.box.height//2),
+                        startX: startX + int(msg.box.width//2)]
         avg = getAverageColor(crop)
         distance = shadeToDepth(avg)
         global OBJECT_MAP
@@ -184,11 +187,11 @@ def onObjectDetected(msg):
 
 
 if __name__ == '__main__':
-    DECISION_RATE_SEC = 0.5
+    DECISION_RATE_SEC = 0.70
     rospy.init_node('navigator', anonymous=True)
     rospy.Subscriber("pathFinderStatus", pathFinderState, onPathFinderUpdated)
     # rospy.Subscriber("drive_parameters", drive_param, driveParamsUpdated)
-    rospy.Subscriber("object_detector", detected_object, onObjectDetected)
+    rospy.Subscriber("detected_object", detected_object, onObjectDetected)
     rospy.Timer(rospy.Duration(DECISION_RATE_SEC), callback=onDecisionInterval)
     rospy.spin()
 
