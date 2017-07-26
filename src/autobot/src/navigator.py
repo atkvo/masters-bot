@@ -94,7 +94,7 @@ def shadeToDepth(color):
     minDistance = 0.7
     maxDistance = 20
     maxColor = 255
-    color = np.average(color, axis=0)
+    color = np.average(color, axis=None)
     # depth = mx + b
     m = (minDistance - maxDistance)/maxColor
     x = color
@@ -171,6 +171,8 @@ def onObjectDetected(msg):
     try:
         depthMap = bridge.imgmsg_to_cv2(msg.depthImg,
                                         desired_encoding="passthrough")
+
+        depthMap = cv2.convertScaleAbs(depthMap, alpha=100, beta=0)
         # Get the center crop of the boxed image
         startY = int(msg.box.height//4)
         startX = int(msg.box.width//4)
@@ -178,6 +180,8 @@ def onObjectDetected(msg):
                         startX: startX + int(msg.box.width//2)]
         avg = getAverageColor(crop)
         distance = shadeToDepth(avg)
+
+        print "object: {}  @{}".format(msg.className, distance)
         global OBJECT_MAP
         OBJECT_MAP.addToMap(msg.className,
                             msg.box.origin_x, msg.box.origin_y,

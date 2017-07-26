@@ -40,7 +40,8 @@ bool signal_recieved = false;
 void depthToCV8UC1(const cv::Mat& float_img, cv::Mat& mono8_img){
   //Process images
   if(mono8_img.rows != float_img.rows || mono8_img.cols != float_img.cols){
-    mono8_img = cv::Mat(float_img.size(), CV_8UC1);}
+    mono8_img = cv::Mat(float_img.size(), CV_8UC1);
+  }
   cv::convertScaleAbs(float_img, mono8_img, 100, 0.0);
 }
 
@@ -116,13 +117,12 @@ public:
 
 	void imageCb(const autobot::detected_img& detect_msg)
 	{
-  
-
-        cv_bridge::CvImagePtr cv_depth_ptr;
-        cv_depth_ptr = cv_bridge::toCvCopy(detect_msg.depthImg);
-		cv_depth = cv_depth_ptr->image;
-        depthToCV8UC1(cv_depth, cv_depth_im);
-        cv::imshow("depth",cv_depth_im);
+        // Conversion is now offloaded to navigator.py node
+        // cv_bridge::CvImagePtr cv_depth_ptr;
+        // cv_depth_ptr = cv_bridge::toCvCopy(detect_msg.depthImg);
+		// cv_depth = cv_depth_ptr->image;
+        // depthToCV8UC1(cv_depth, cv_depth_im);
+        // cv::imshow("depth",cv_depth_im);
 		try
 		{
             
@@ -184,7 +184,7 @@ public:
 
         autobot::detected_object detected_object;
         detected_object.className = class_name;
-        detected_object.depthImg = *img_msg.get();
+        detected_object.depthImg = detect_msg.depthImg;
         detected_object.box = detect_msg.box;
 
         class_pub_.publish<autobot::detected_object>(detected_object);
