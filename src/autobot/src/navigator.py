@@ -171,8 +171,11 @@ def onObjectDetected(msg):
     try:
         depthMap = bridge.imgmsg_to_cv2(msg.depthImg,
                                         desired_encoding="passthrough")
-        crop = depthMap[msg.box.origin_y: msg.box.origin_y + msg.box.height,
-                        msg.box.origin_x: msg.box.origin_x + msg.box.width]
+        # Get the center crop of the boxed image
+        startY = int(msg.box.height//4)
+        startX = int(msg.box.width//4)
+        crop = depthMap[startY: startY + int(msg.box.height//2),
+                        startX: startX + int(msg.box.width//2)]
         avg = getAverageColor(crop)
         distance = shadeToDepth(avg)
         global OBJECT_MAP
