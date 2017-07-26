@@ -21,7 +21,7 @@ stdscr.keypad(1)
 
 stdscr.refresh()
 
-PUB_OBJ = rospy.Publisher('object_detector', detected_object, queue_size=10)
+PUB_OBJ = rospy.Publisher('detected_object', detected_object, queue_size=10)
 
 
 def drawGreeter():

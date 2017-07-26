@@ -191,7 +191,7 @@ if __name__ == '__main__':
     rospy.init_node('navigator', anonymous=True)
     rospy.Subscriber("pathFinderStatus", pathFinderState, onPathFinderUpdated)
     # rospy.Subscriber("drive_parameters", drive_param, driveParamsUpdated)
-    rospy.Subscriber("object_detector", detected_object, onObjectDetected)
+    rospy.Subscriber("detected_object", detected_object, onObjectDetected)
     rospy.Timer(rospy.Duration(DECISION_RATE_SEC), callback=onDecisionInterval)
     rospy.spin()
 
