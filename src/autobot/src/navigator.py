@@ -116,6 +116,23 @@ def hasObstruction(className, list):
     return (False, None)
 
 
+def stopIfDetected(className, minDistance):
+    global OBJECT_MAP
+    dangers = OBJECT_MAP.getHighPriorities()
+    # hasObj, obstruction = hasObstruction('person', dangers)
+    # hasObj, obstruction = hasObstruction('bottle', dangers)
+    hasObj, obstruction = hasObstruction(className, dangers)
+    # TODO: make sure person is in a certain X position before stopping
+    if hasObj and obstruction.distance < 10:
+        print 'Stopping car: {} @ {}'.format(obstruction.className,
+                                             obstruction.coord)
+        stopCar()
+        OBJECT_MAP.clearMap()
+        return True
+    else:
+        return False
+
+
 def onDecisionInterval(event):
     """Makes pathing decision based on objects detected"""
     global OBJECT_MAP
@@ -127,16 +144,10 @@ def onDecisionInterval(event):
         OBJECT_MAP.clearMap()
         return
 
-    # hasObj, obstruction = hasObstruction('person', dangers)
-    # hasObj, obstruction = hasObstruction('bottle', dangers)
-    hasObj, obstruction = hasObstruction('dog', dangers)
-    # TODO: make sure person is in a certain X position before stopping
-    if hasObj and obstruction.distance < 10:
-        print 'Stopping car: {} @ {}'.format(obstruction.className,
-                                             obstruction.coord)
-        stopCar()
-        OBJECT_MAP.clearMap()
-        return  # a person has priority over all
+    if (stopIfDetected('dog', 10) or
+            stopIfDetected('bottle', 10) or
+            stopIfDetected('person', 10)):
+        return
 
     hasStop, stopSign = hasObstruction('stop sign', dangers)
     if (hasStop and stopSign.distance < 10 and
