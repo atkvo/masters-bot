@@ -26,6 +26,8 @@ OBJECT_MAP = ObstructionMap()
 STOP_LOGIC = StopSign()
 DEFAULT_WALL_DIST = 0.5
 
+ObstructionMap.HIGHPRIORITIES = ['person', 'dog', 'bottle']
+
 
 def togglePathFinder(state):
     try:
@@ -118,11 +120,16 @@ def onDecisionInterval(event):
 
     dangers = OBJECT_MAP.getHighPriorities()
     if STOP_LOGIC.state == StopStates.FULL_STOP:
+        OBJECT_MAP.clearMap()
         return
 
-    hasPerson, obstruction = hasObstruction('person', dangers)
+    # hasObj, obstruction = hasObstruction('person', dangers)
+    # hasObj, obstruction = hasObstruction('bottle', dangers)
+    hasObj, obstruction = hasObstruction('dog', dangers)
     # TODO: make sure person is in a certain X position before stopping
-    if hasPerson and obstruction.distance < 2:
+    if hasObj and obstruction.distance < 2:
+        print 'Stopping car: {} @ {}'.format(obstruction.className,
+                                             obstruction.coord)
         stopCar()
         OBJECT_MAP.clearMap()
         return  # a person has priority over all
@@ -174,24 +181,30 @@ def onObjectDetected(msg):
 
         depthMap = cv2.convertScaleAbs(depthMap, alpha=100, beta=0)
         # Get the center crop of the boxed image
-        startY = int(msg.box.height//4)
-        startX = int(msg.box.width//4)
+        startY = int(msg.box.origin_y) + int(msg.box.height//4)
+        startX = int(msg.box.origin_x) + int(msg.box.width//4)
+
         crop = depthMap[startY: startY + int(msg.box.height//2),
                         startX: startX + int(msg.box.width//2)]
+
+        centerY = startY + int(msg.box.height//2)
+        centerX = startX + int(msg.box.width//2)
+
         avg = getAverageColor(crop)
         distance = shadeToDepth(avg)
 
-        print "object: {}  @{}".format(msg.className, distance)
+        print "object: {}  @{:4.3}, {}".format(msg.className, distance,
+                                               (centerX, centerY))
         global OBJECT_MAP
         OBJECT_MAP.addToMap(msg.className,
-                            msg.box.origin_x, msg.box.origin_y,
+                            centerX, centerY,
                             distance)
     except CvBridgeError as e:
         print(e)
 
 
 if __name__ == '__main__':
-    DECISION_RATE_SEC = 0.70
+    DECISION_RATE_SEC = 0.50
     rospy.init_node('navigator', anonymous=True)
     rospy.Subscriber("pathFinderStatus", pathFinderState, onPathFinderUpdated)
     # rospy.Subscriber("drive_parameters", drive_param, driveParamsUpdated)
