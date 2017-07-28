@@ -26,6 +26,7 @@ OBJECT_MAP = ObstructionMap()
 STOP_LOGIC = StopSign()
 DEFAULT_WALL_DIST = 0.5
 
+"""Override the high priority targets here"""
 ObstructionMap.HIGHPRIORITIES = ['person', 'dog', 'bottle']
 
 
@@ -98,9 +99,12 @@ def shadeToDepth(color):
     maxColor = 255
     color = np.average(color, axis=None)
     # depth = mx + b
-    m = (minDistance - maxDistance)/maxColor
+    # m = (minDistance - maxDistance)/maxColor
+    # x = color
+    # b = maxDistance
+    m = (maxDistance - minDistance)/maxColor
     x = color
-    b = maxDistance
+    b = minDistance
     return m * x + b
 
 
