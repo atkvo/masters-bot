@@ -131,7 +131,7 @@ def onDecisionInterval(event):
     # hasObj, obstruction = hasObstruction('bottle', dangers)
     hasObj, obstruction = hasObstruction('dog', dangers)
     # TODO: make sure person is in a certain X position before stopping
-    if hasObj and obstruction.distance < 2:
+    if hasObj and obstruction.distance < 10:
         print 'Stopping car: {} @ {}'.format(obstruction.className,
                                              obstruction.coord)
         stopCar()
@@ -139,7 +139,7 @@ def onDecisionInterval(event):
         return  # a person has priority over all
 
     hasStop, stopSign = hasObstruction('stop sign', dangers)
-    if (hasStop and stopSign.distance < 2 and
+    if (hasStop and stopSign.distance < 10 and
             STOP_LOGIC.state != StopStates.IGNORE_STOP_SIGNS):
         if STOP_LOGIC.state == StopStates.NORMAL:
             stopCar()
