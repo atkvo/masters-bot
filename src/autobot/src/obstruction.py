@@ -47,7 +47,7 @@ class ObstructionMap(object):
         obs = ObstructionInfo()
         obs.className = className
         obs.distance = distance
-        obs.position = (x, y)
+        obs.coord = (x, y)
 
         self.obstructions[side].append(obs)
         if obs.className in self.HIGHPRIORITIES:
