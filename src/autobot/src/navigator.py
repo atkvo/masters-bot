@@ -173,8 +173,8 @@ def onDecisionInterval(event):
     # Fallback to normal wall route mode
     # Do you want to revert to the default distance here?
     # global DEFAULT_WALL_DIST
-    # setWallDist(DEFAULT_WALL_DIST, wall_dist.WALL_UNDEF)
-    setWallDist(PATH_STATE.desiredTrajectory, wall_dist.WALL_UNDEF)
+    setWallDist(DEFAULT_WALL_DIST, wall_dist.WALL_UNDEF)
+    # setWallDist(PATH_STATE.desiredTrajectory, wall_dist.WALL_UNDEF)
     togglePathFinder(True)
     pathStateUpdated = False
 
