@@ -224,6 +224,12 @@ target_link_libraries(obj_detector nvcaffe_parser nvinfer jetson-inference ${LIN
 cuda_add_executable(obj_classifier src/obj_classifier.cpp)
 target_link_libraries(obj_classifier nvcaffe_parser nvinfer jetson-inference ${LINK_LIBRARIES} ${QT_LIBRARIES})
 
+cuda_add_executable(vision_detect src/vision_detect.cpp)
+target_link_libraries(vision_detect nvcaffe_parser nvinfer jetson-inference ${LINK_LIBRARIES} ${QT_LIBRARIES})
+
+cuda_add_executable(vision_classify src/vision_classify.cpp)
+target_link_libraries(vision_classify nvcaffe_parser nvinfer jetson-inference ${LINK_LIBRARIES} ${QT_LIBRARIES})
+
 ###############################################################################
 
 ## Rename C++ executable without prefix
