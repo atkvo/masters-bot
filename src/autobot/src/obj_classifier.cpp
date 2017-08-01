@@ -28,14 +28,16 @@ using namespace std;
 
 bool signal_recieved = false;
 
-//void sig_handler(int signo)
-//{
-	//if( signo == SIGINT )
-	//{
+/*
+void sig_handler(int signo)
+{
+	if( signo == SIGINT )
+	{
 		//printf("received SIGINT\n");
 		//signal_recieved = true;
-	//}
-//}
+	}
+}
+*/
 
 void depthToCV8UC1(const cv::Mat& float_img, cv::Mat& mono8_img){
   //Process images
@@ -63,7 +65,6 @@ class ObjectClassifier
     cv::Mat cv_depth;
 	float confidence = 0.0f;
 
-
 	//float* bbCPU    = NULL;
 	//float* bbCUDA   = NULL;
 	//float* confCPU  = NULL;
@@ -80,8 +81,10 @@ class ObjectClassifier
 	uint32_t imgHeight;
 	size_t imgSize;
 
+	bool displayToScreen = false;
+
 public:
-	ObjectClassifier(int argc, char** argv ) : it_(nh_)
+	ObjectClassifier(int argc, char** argv, bool display) : it_(nh_)
 	{
 		cout << "start constructor" << endl;
 		// Subscrive to input video feed and publish output video feed
@@ -91,12 +94,13 @@ public:
 		  &ObjectClassifier::imageCb, this);
         class_pub_ = nh_.advertise<autobot::detected_object>("/detected_object", 2);
 
+		displayToScreen = display;
 
-		cv::namedWindow(OPENCV_WINDOW);
-
-		cout << "Named a window" << endl;
-
-        prev = std::chrono::steady_clock::now();
+		if (displayToScreen) {
+			cv::namedWindow(OPENCV_WINDOW);
+			cout << "Named a window" << endl;
+			prev = std::chrono::steady_clock::now();
+		}
 
          // create imageNet
         net = imageNet::Create(argc, argv );
@@ -105,9 +109,7 @@ public:
 		if( !net )
 		{
 			printf("obj_detect:   failed to initialize imageNet\n");
-
 		}
-
 	}
 
 	~ObjectClassifier()
@@ -146,7 +148,7 @@ public:
         if(!gpu_data){
             ROS_INFO("first allocation");
             CUDA(cudaMalloc(&gpu_data, cv_im.rows*cv_im.cols * sizeof(float4)));
-        }else if(imgHeight != cv_im.rows || imgWidth != cv_im.cols){
+        } else if(imgHeight != cv_im.rows || imgWidth != cv_im.cols){
             ROS_INFO("re allocation");
             // reallocate for a new image size if necessary
             CUDA(cudaFree(gpu_data));
@@ -171,14 +173,16 @@ public:
         class_name = net->GetClassDesc(img_class);
         
         
-        std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
-        float fps = 1000.0 / std::chrono::duration_cast<std::chrono::milliseconds>(now - prev).count() ;
+        if (displayToScreen) {
+			std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
+			float fps = 1000.0 / std::chrono::duration_cast<std::chrono::milliseconds>(now - prev).count() ;
 
-        prev = now;
-        
-        char str[256];
-        sprintf(str, "TensorRT build %x | %s | %04.1f FPS", NV_GIE_VERSION, net->HasFP16() ? "FP16" : "FP32", fps);
-        cv::setWindowTitle(OPENCV_WINDOW, str);
+			prev = now;
+			
+			char str[256];
+			sprintf(str, "TensorRT build %x | %s | %04.1f FPS", NV_GIE_VERSION, net->HasFP16() ? "FP16" : "FP32", fps);
+			cv::setWindowTitle(OPENCV_WINDOW, str);
+		}
 
         sensor_msgs::ImagePtr img_msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", cv_depth_im).toImageMsg();
 
@@ -190,17 +194,16 @@ public:
         class_pub_.publish<autobot::detected_object>(detected_object);
         // update image back to original
 
-        cv_im.convertTo(cv_im,CV_8UC3);
-        cv::cvtColor(cv_im,cv_im,CV_RGBA2BGR);
-        // draw class string
-        cv::putText(cv_im, class_name, cv::Point(60,60), cv::FONT_HERSHEY_PLAIN, 3.0, cv::Scalar(0,0,255),3);
-        
-        
-        
-		// Update GUI Window
-        cv::imshow(OPENCV_WINDOW, cv_im);
-		cv::waitKey(1);
-
+		if (displayToScreen) {
+			cv_im.convertTo(cv_im,CV_8UC3);
+			cv::cvtColor(cv_im,cv_im,CV_RGBA2BGR);
+			// draw class string
+			cv::putText(cv_im, class_name, cv::Point(60,60), cv::FONT_HERSHEY_PLAIN, 3.0, cv::Scalar(0,0,255),3);
+			
+			// Update GUI Window
+			cv::imshow(OPENCV_WINDOW, cv_im);
+			cv::waitKey(1);
+		}
 	}
 };
 
@@ -211,13 +214,17 @@ int main( int argc, char** argv ) {
 	ros::init(argc, argv, "obj_detector");
     ros::NodeHandle nh;
 
-
-	for( int i=0; i < argc; i++ )
+	bool display = false;
+	for( int i=0; i < argc; i++ ) {
 		printf("%i [%s]  ", i, argv[i]);
+		if (strcmp(argv[i], "--DISPLAY") == 0) {
+			display = true;
+		}
+	}
 
 	printf("\n\n");
 
-	ObjectClassifier ic(argc, argv);
+	ObjectClassifier ic(argc, argv, display);
 
 	ros::spin();
 

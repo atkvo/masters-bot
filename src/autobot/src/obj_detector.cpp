@@ -72,23 +72,26 @@ class ObjectDetector
 	uint32_t imgWidth;
 	uint32_t imgHeight;
 	size_t imgSize;
+	bool displayToScreen = false;
 
 public:
-	ObjectDetector(int argc, char** argv ) : it_(nh_)
+	ObjectDetector(int argc, char** argv, bool display) : it_(nh_)
 	{
-		cout << "start constructor" << endl;
 		// Subscrive to input video feed and publish output video feed
-		//image_sub_ = it_.subscribe("/left/image_rect_color", 2,
-		  //&ObjectDetector::imageCb, this);
+		// image_sub_ = it_.subscribe("/left/image_rect_color", 2,
+		// &ObjectDetector::imageCb, this);
         image_sub_ = nh_.subscribe("/compound_img", 2,
 		  &ObjectDetector::imageCb, this);
         detect_img_pub = nh_.advertise<autobot::detected_img>("/detected_image", 2);
         dummysub = it_.subscribe("depth/depth_registered", 1, &ObjectDetector::dummy, this);
-		cv::namedWindow(OPENCV_WINDOW);
+		displayToScreen = display;
 
-		cout << "Named a window" << endl;
+		if (displayToScreen) {
+            cv::namedWindow(OPENCV_WINDOW);
+            cout << "Named a window" << endl;
+            prev = std::chrono::steady_clock::now();
+        }
 
-        prev = std::chrono::steady_clock::now();
 
 		/*
 		 * create detectNet
@@ -124,12 +127,14 @@ public:
 		printf("maximum bounding boxes:  %u\n", maxBoxes);
 		classes  = net->GetNumClasses();
 		cout << "Constructor operations complete" << endl;
-
 	}
 
 	~ObjectDetector()
 	{
-		cv::destroyWindow(OPENCV_WINDOW);
+	    if (displayToScreen) {
+            cv::destroyWindow(OPENCV_WINDOW);
+        }
+
 	}
     
     void dummy(const sensor_msgs::ImageConstPtr& msg) {
@@ -155,16 +160,16 @@ public:
 		}
 		catch (cv_bridge::Exception& e)
 		{
-		  ROS_ERROR("cv_bridge exception: %s", e.what());
-		  return;
+		    ROS_ERROR("cv_bridge exception: %s", e.what());
+		    return;
 		}
 
 
         // allocate GPU data if necessary
-        if(!gpu_data){
+        if (!gpu_data) {
             ROS_INFO("first allocation");
             CUDA(cudaMalloc(&gpu_data, cv_im.rows*cv_im.cols * sizeof(float4)));
-        }else if(imgHeight != cv_im.rows || imgWidth != cv_im.cols){
+        } else if (imgHeight != cv_im.rows || imgWidth != cv_im.cols) {
             ROS_INFO("re allocation");
             // reallocate for a new image size if necessary
             CUDA(cudaFree(gpu_data));
@@ -185,7 +190,7 @@ public:
 		// find object with detectNet
 		int numBoundingBoxes = maxBoxes;
 
-		if( net->Detect((float*)gpu_data, imgWidth, imgHeight, bbCPU, &numBoundingBoxes, confCPU))
+		if (net->Detect((float*)gpu_data, imgWidth, imgHeight, bbCPU, &numBoundingBoxes, confCPU))
 		{
 			//printf("%i bounding boxes detected\n", numBoundingBoxes);
 
@@ -203,14 +208,16 @@ public:
 			}
 
             
-            std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
-            float fps = 1000.0 / std::chrono::duration_cast<std::chrono::milliseconds>(now - prev).count() ;
+            if (displayToScreen) {
+                std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
+                float fps = 1000.0 / std::chrono::duration_cast<std::chrono::milliseconds>(now - prev).count() ;
 
-            prev = now;
-            
-			char str[256];
-			sprintf(str, "TensorRT build %x | %s | %04.1f FPS", NV_GIE_VERSION, net->HasFP16() ? "FP16" : "FP32", fps);
-			cv::setWindowTitle(OPENCV_WINDOW, str);
+                prev = now;
+                
+                char str[256];
+                sprintf(str, "TensorRT build %x | %s | %04.1f FPS", NV_GIE_VERSION, net->HasFP16() ? "FP16" : "FP32", fps);
+                cv::setWindowTitle(OPENCV_WINDOW, str);
+            }
 
 		}
 
@@ -221,8 +228,11 @@ public:
         cv::cvtColor(cv_im,cv_im,CV_RGBA2BGR);
 
 		// Update GUI Window
-        cv::imshow(OPENCV_WINDOW, cv_im);
-		cv::waitKey(1);
+		if (displayToScreen) {
+			cv::imshow(OPENCV_WINDOW, cv_im);
+			cv::waitKey(1);
+		}
+
 
         for( int n=0; n < numBoundingBoxes; n++ ) {
             
@@ -269,13 +279,14 @@ public:
             if (origin_y + crop_height >= (float)imgHeight) {
                 crop_height = (float)imgHeight - origin_y - 1.0;
             }
+
             printf("AFTER : origin_x: %f origin_y: %f crop_width: %f crop_height: %f\n",origin_x, origin_y, crop_width, crop_height);
             cv::Mat croppedImage = cv_im(cv::Rect(origin_x, origin_y, crop_width, crop_height));
             sensor_msgs::ImagePtr img_msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", croppedImage).toImageMsg();
             boost::shared_ptr<autobot::detected_img> detected_img = boost::make_shared<autobot::detected_img>();
             boost::shared_ptr<autobot::bounding_box> bbox = boost::make_shared<autobot::bounding_box>();
             
-                        bbox->origin_x = origin_x;
+            bbox->origin_x = origin_x;
             bbox->origin_y = origin_y;
             bbox->height = crop_height;
             bbox->width = crop_width;
@@ -284,11 +295,12 @@ public:
             detected_img->depthImg = cp_msg.depthImg;
             detected_img->box = *bbox.get();
 
-
-
             detect_img_pub.publish<autobot::detected_img>(detected_img);
-            cv::imshow("crop", croppedImage);
-            cv::waitKey(1);
+
+            if (displayToScreen) {
+				cv::imshow("crop", croppedImage);
+				cv::waitKey(1);
+			}
         }
 
 	}
@@ -301,13 +313,18 @@ int main( int argc, char** argv ) {
 	ros::init(argc, argv, "obj_detector");
     ros::NodeHandle nh;
 
+	bool displayToScreen = false;
 
-	for( int i=0; i < argc; i++ )
+	for( int i=0; i < argc; i++ ) {
 		printf("%i [%s]  ", i, argv[i]);
+		if (strcmp(argv[i], "--DISPLAY") == 0) { 
+			displayToScreen = true;
+		}
+	}
 
 	printf("\n\n");
 
-	ObjectDetector ic(argc, argv);
+	ObjectDetector ic(argc, argv, displayToScreen);
 
 	ros::spin();
 
