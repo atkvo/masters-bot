@@ -32,7 +32,7 @@ class PathConfig(object):
         self.wallToWatch = autobot.msg.wall_dist.WALL_RIGHT
         self.desiredTrajectory = 0.5  # desired distance from the wall
         self.minFrontDist = 2.2       # minimum required distance in front of car
-        self.velocity = 7.3           # velocity of drive
+        self.velocity = 8.5           # velocity of drive
         self.pubRate = 0              # publish rate of node
         self.enabled = False          # enable/disable state of wall hugging
 
