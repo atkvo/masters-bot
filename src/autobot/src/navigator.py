@@ -27,7 +27,7 @@ STOP_LOGIC = StopSign()
 DEFAULT_WALL_DIST = 0.5
 
 """Override the high priority targets here"""
-ObstructionMap.HIGHPRIORITIES = ['person', 'dog', 'bottle']
+ObstructionMap.HIGHPRIORITIES = ['person', 'dog', 'bottle', 'ball']
 
 
 def togglePathFinder(state):
@@ -123,9 +123,12 @@ def stopIfDetected(className, minDistance):
     # hasObj, obstruction = hasObstruction('bottle', dangers)
     hasObj, obstruction = hasObstruction(className, dangers)
     # TODO: make sure person is in a certain X position before stopping
-    if hasObj and obstruction.distance < 10:
-        print 'Stopping car: {} @ {}'.format(obstruction.className,
-                                             obstruction.coord)
+    # Average x coordinates:  100 (left) - 630 (right)
+
+    if (hasObj and obstruction.distance < 10 and
+            (obstruction.coord[0] > 200 and obstruction.coord[0] < 550)):
+        print '** STOP {} @ {}'.format(obstruction.className,
+                                       obstruction.coord)
         stopCar()
         OBJECT_MAP.clearMap()
         return True
@@ -144,9 +147,10 @@ def onDecisionInterval(event):
         OBJECT_MAP.clearMap()
         return
 
-    if (stopIfDetected('dog', 10) or
-            stopIfDetected('bottle', 10) or
-            stopIfDetected('person', 10)):
+    if (stopIfDetected('dog', 8.5) or
+            stopIfDetected('bottle', 8.5) or
+            stopIfDetected('ball', 8.5) or
+            stopIfDetected('person', 8.5)):
         return
 
     hasStop, stopSign = hasObstruction('stop sign', dangers)
@@ -172,7 +176,7 @@ def onDecisionInterval(event):
 
     # Fallback to normal wall route mode
     # Do you want to revert to the default distance here?
-    # global DEFAULT_WALL_DIST
+    global DEFAULT_WALL_DIST
     setWallDist(DEFAULT_WALL_DIST, wall_dist.WALL_UNDEF)
     # setWallDist(PATH_STATE.desiredTrajectory, wall_dist.WALL_UNDEF)
     togglePathFinder(True)
