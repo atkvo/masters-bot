@@ -125,7 +125,7 @@ def stopIfDetected(className, minDistance):
     # TODO: make sure person is in a certain X position before stopping
     # Average x coordinates:  100 (left) - 630 (right)
 
-    if (hasObj and obstruction.distance < 10 and
+    if (hasObj and obstruction.distance < minDistance and
             (obstruction.coord[0] > 200 and obstruction.coord[0] < 550)):
         print '** STOP {} @ {}'.format(obstruction.className,
                                        obstruction.coord)
@@ -147,14 +147,14 @@ def onDecisionInterval(event):
         OBJECT_MAP.clearMap()
         return
 
-    if (stopIfDetected('dog', 8.5) or
-            stopIfDetected('bottle', 8.5) or
-            stopIfDetected('ball', 8.5) or
-            stopIfDetected('person', 8.5)):
+    if (stopIfDetected('dog', 15) or
+            stopIfDetected('bottle', 15) or
+            stopIfDetected('ball',15) or
+            stopIfDetected('person', 15)):
         return
 
-    hasStop, stopSign = hasObstruction('stop sign', dangers)
-    if (hasStop and stopSign.distance < 10 and
+    hasStop, stopSign = hasObstruction('chair', dangers)
+    if (hasStop and stopSign.distance < 15 and
             STOP_LOGIC.state != StopStates.IGNORE_STOP_SIGNS):
         if STOP_LOGIC.state == StopStates.NORMAL:
             stopCar()
