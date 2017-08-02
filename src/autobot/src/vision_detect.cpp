@@ -40,7 +40,7 @@ bool signal_recieved = false;
 	//}
 //}
 
-static const std::string OPENCV_WINDOW = "Image post bridge conversion";
+//static const std::string OPENCV_WINDOW = "Image post bridge conversion";
 static const std::string OPENCV_WINDOW2 = "Image post bit depth conversion";
 static const std::string OPENCV_WINDOW3 = "Image post color conversion";
 static const std::string OPENCV_WINDOW4 = "Image window";
@@ -84,9 +84,9 @@ public:
 		  &ObjectDetector::imageCb, this);
         detect_img_pub = nh_.advertise<autobot::detected_img>("/detected_image", 2);
         dummysub = it_.subscribe("depth/depth_registered", 1, &ObjectDetector::dummy, this);
-		cv::namedWindow(OPENCV_WINDOW);
+		//cv::namedWindow(OPENCV_WINDOW);
 
-		cout << "Named a window" << endl;
+		//cout << "Named a window" << endl;
 
         prev = std::chrono::steady_clock::now();
 
@@ -129,7 +129,7 @@ public:
 
 	~ObjectDetector()
 	{
-		cv::destroyWindow(OPENCV_WINDOW);
+		//cv::destroyWindow(OPENCV_WINDOW);
 	}
     
     void dummy(const sensor_msgs::ImageConstPtr& msg) {
@@ -185,7 +185,7 @@ public:
 		// find object with detectNet
 		int numBoundingBoxes = maxBoxes;
 
-		if( net->Detect((float*)gpu_data, imgWidth, imgHeight, bbCPU, &numBoundingBoxes, confCPU))
+		/*if( net->Detect((float*)gpu_data, imgWidth, imgHeight, bbCPU, &numBoundingBoxes, confCPU))
 		{
 			//printf("%i bounding boxes detected\n", numBoundingBoxes);
 
@@ -212,7 +212,7 @@ public:
 			sprintf(str, "TensorRT build %x | %s | %04.1f FPS", NV_GIE_VERSION, net->HasFP16() ? "FP16" : "FP32", fps);
 			cv::setWindowTitle(OPENCV_WINDOW, str);
 
-		}
+		}*/
 
 
 		// update image back to original
@@ -221,8 +221,8 @@ public:
         cv::cvtColor(cv_im,cv_im,CV_RGBA2BGR);
 
 		// Update GUI Window
-        cv::imshow(OPENCV_WINDOW, cv_im);
-		cv::waitKey(1);
+        //cv::imshow(OPENCV_WINDOW, cv_im);
+		//cv::waitKey(1);
 
         for( int n=0; n < numBoundingBoxes; n++ ) {
             
@@ -270,7 +270,7 @@ public:
                 crop_height = (float)imgHeight - origin_y - 1.0;
             }
             printf("AFTER : origin_x: %f origin_y: %f crop_width: %f crop_height: %f\n",origin_x, origin_y, crop_width, crop_height);
-            cv::Mat croppedImage = cv_im(cv::Rect(224, 76, 224, 224));
+            cv::Mat croppedImage = cv_im; 
             sensor_msgs::ImagePtr img_msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", croppedImage).toImageMsg();
             boost::shared_ptr<autobot::detected_img> detected_img = boost::make_shared<autobot::detected_img>();
             boost::shared_ptr<autobot::bounding_box> bbox = boost::make_shared<autobot::bounding_box>();
@@ -291,7 +291,7 @@ public:
             cv::waitKey(1);
         }
         
-        cv::Mat croppedImage = cv_im(cv::Rect(224, 76, 224, 224));
+        cv::Mat croppedImage = cv_im;
         sensor_msgs::ImagePtr img_msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", croppedImage).toImageMsg();
         boost::shared_ptr<autobot::detected_img> detected_img = boost::make_shared<autobot::detected_img>();
         boost::shared_ptr<autobot::bounding_box> bbox = boost::make_shared<autobot::bounding_box>();

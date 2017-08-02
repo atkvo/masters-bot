@@ -40,7 +40,7 @@
     <!--param name="odometry_topic"        value="odom" /-->
 
   </node>
-    <node name="vision_detect" pkg="autobot" type="vision_detect" args="--model /media/ubuntu/SSD/masters-bot-zed/src/autobot/src/model/snapshot_iter_3690.caffemodel --prototxt /media/ubuntu/SSD/masters-bot-zed/src/autobot/src/model/deploy.prototxt"/>
+    <node name="vision_detect" pkg="autobot" type="vision_detect" args="--model /media/ubuntu/SSD/masters-bot-zed/src/autobot/src/model/Angle_Classification_epoch_80/snapshot_iter_24720.caffemodel --prototxt /media/ubuntu/SSD/masters-bot-zed/src/autobot/src/model/Angle_Classification_epoch_80/deploy.prototxt"/>
 
   <!-- ROS URDF description of the ZED -->
   <param name="zed_description" textfile="$(find autobot)/urdf/zed.urdf" />

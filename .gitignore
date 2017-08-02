@@ -1,6 +1,7 @@
 build/
 devel/
 dataset/
+dataset2/
 msg_gen/
 srv_gen/
 bin/
@@ -13,4 +14,4 @@ cmake_install.cmake
 *~
 tags
 .vscode
-
+*.tar.gz

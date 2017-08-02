@@ -86,9 +86,9 @@ public:
         drive_pub_ = nh_.advertise<autobot::drive_param>("/drive_parameters", 2);
 
 
-		cv::namedWindow(OPENCV_WINDOW);
+		//cv::namedWindow(OPENCV_WINDOW);
 
-		cout << "Named a window" << endl;
+		//cout << "Named a window" << endl;
 
         prev = std::chrono::steady_clock::now();
 
@@ -106,7 +106,7 @@ public:
 
 	~ObjectClassifier()
 	{
-		cv::destroyWindow(OPENCV_WINDOW);
+		//cv::destroyWindow(OPENCV_WINDOW);
 	}
 
 	void imageCb(const autobot::detected_img& detect_msg)
@@ -167,39 +167,39 @@ public:
         
         autobot::drive_param driveParam;
         driveParam.velocity = 8.0;
-        if(class_name == "-60")
+        if(class_name == "Left 60")
         {
             driveParam.angle = -60.0;
         }
-        else if(class_name == "-45")
+        else if(class_name == "Left 45")
         {
             driveParam.angle = -45.0;
         }
-        else if(class_name == "-30")
+        else if(class_name == "Left 30")
         {
             driveParam.angle = -30.0;
         }
-        else if(class_name == "-15")
+        else if(class_name == "Left 15")
         {
             driveParam.angle = -15.0;
         }
-        else if(class_name == "0")
+        else if(class_name == "Straight 0")
         {
             driveParam.angle = 0.0;
         }
-        else if(class_name == "15")
+        else if(class_name == "Right 15")
         {
             driveParam.angle = 15.0;
         }
-        else if(class_name == "30")
+        else if(class_name == "Right 30")
         {
             driveParam.angle = 30.0;
         }
-        else if(class_name == "45")
+        else if(class_name == "Right 45")
         {
             driveParam.angle = 45.0;
         }
-        else if(class_name == "60")
+        else if(class_name == "Right 60")
         {
             driveParam.angle = 60.0;
         }
@@ -212,7 +212,7 @@ public:
         
         char str[256];
         sprintf(str, "TensorRT build %x | %s | %04.1f FPS", NV_GIE_VERSION, net->HasFP16() ? "FP16" : "FP32", fps);
-        cv::setWindowTitle(OPENCV_WINDOW, str);
+        //cv::setWindowTitle(OPENCV_WINDOW, str);
 
         sensor_msgs::ImagePtr img_msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", cv_depth_im).toImageMsg();
 
@@ -234,7 +234,7 @@ public:
         
         
 		// Update GUI Window
-        cv::imshow(OPENCV_WINDOW, cv_im);
+        //cv::imshow(OPENCV_WINDOW, cv_im);
 		cv::waitKey(1);
 
 	}
