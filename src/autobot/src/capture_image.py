@@ -28,34 +28,44 @@ def __init__(self):
     bridge = CvBridge(); 
 
 def callback(temp):
-    print("current image updated")
+    #print("current image updated")
     global currentImage
     try:
         currentImage = bridge.imgmsg_to_cv2(temp, desired_encoding="passthrough")
     except CvBridgeError as e:
         print(e)
-    print("picture taken")
     global currentAngle
     global currentVel
     global i
-    filepath = "dataset/" + str(currentAngle) + "_" + str(i) + str(time) + ".png"
+    if currentAngle > 0:
+        filepath = "dataset2/right" + str(currentAngle) + "_" + str(i) + str(time) + ".png"
+    elif currentAngle < 0:
+        filepath = "dataset2/left" + str(currentAngle) + "_" + str(i) + str(time) + ".png"
+    else:
+        filepath = "dataset2/zero" + str(currentAngle) + "_" + str(i) + str(time) + ".png"
     i+=1
-    if currentVel > 6.0:
+    if currentVel > 7.0:
+        print("picture taken")
         cv2.imwrite(filepath, currentImage) 
 
 def takePicture(data):
     
     #define file path
-    print("picture taken")
     global currentAngle
     global currentVel
     currentAngle = data.angle
     currentVel = data.velocity
     global i
-    filepath = "dataset/" + str(currentAngle) + "_" + str(i) + ".png"
+    if currentAngle > 0:
+        filepath = "dataset2/right" + str(currentAngle) + "_" + str(i) + str(time) + ".png"
+    elif currentAngle < 0:
+        filepath = "dataset2/left" + str(currentAngle) + "_" + str(i) + str(time) + ".png"
+    else:
+        filepath = "dataset2/zero" + str(currentAngle) + "_" + str(i) + str(time) + ".png"
     i+=1
-    if currentVel > 6.0:
-          cv2.imwrite(filepath, currentImage) 
+    if currentVel > 7.0:
+        print("picture taken")
+        cv2.imwrite(filepath, currentImage) 
 
 def listen():
     bridge = CvBridge();
