@@ -125,11 +125,16 @@ public:
         // cv_depth = cv_depth_ptr->image;
         // depthToCV8UC1(cv_depth, cv_depth_im);
         // cv::imshow("depth",cv_depth_im);
+        int width;
+        int height;
+         
         try
         {
             
             cv_ptr = cv_bridge::toCvCopy(detect_msg.img, sensor_msgs::image_encodings::BGR8);
             cv_im = cv_ptr->image;
+            width = cv_im.cols;
+            height = cv_im.rows;
             cv::resize(cv_im,cv_im,cv::Size(224,224));
             cv_im.convertTo(cv_im,CV_32FC3);
 
@@ -197,6 +202,7 @@ public:
         if (displayToScreen) {
             cv_im.convertTo(cv_im,CV_8UC3);
             cv::cvtColor(cv_im,cv_im,CV_RGBA2BGR);
+            cv::resize(cv_im,cv_im,cv::Size(width,height));
             // draw class string
             cv::putText(cv_im, class_name, cv::Point(60,60), cv::FONT_HERSHEY_PLAIN, 3.0, cv::Scalar(0,0,255),3);
             
