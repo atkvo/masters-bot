@@ -203,7 +203,7 @@ public:
                 float* bb = bbCPU + (n * 4);
 
                 printf("bounding box %i   (%f, %f)  (%f, %f)  w=%f  h=%f\n", n, bb[0], bb[1], bb[2], bb[3], bb[2] - bb[0], bb[3] - bb[1]);
-                cv::rectangle( cv_im, cv::Point( bb[0], bb[1] ), cv::Point( bb[2], bb[3]), cv::Scalar( 255, 55, 0 ), +1, 4 );
+                //cv::rectangle( cv_im, cv::Point( bb[0], bb[1] ), cv::Point( bb[2], bb[3]), cv::Scalar( 255, 55, 0 ), +1, 4 );
 
             }
 
@@ -227,11 +227,6 @@ public:
         cv_im.convertTo(cv_im,CV_8UC3);
         cv::cvtColor(cv_im,cv_im,CV_RGBA2BGR);
 
-        // Update GUI Window
-        if (displayToScreen) {
-            cv::imshow(OPENCV_WINDOW, cv_im);
-            cv::waitKey(1);
-        }
 
 
         for( int n=0; n < numBoundingBoxes; n++ ) {
@@ -253,13 +248,13 @@ public:
                 float diff = crop_height - crop_width;
                 printf("diff: %f\n",diff);
                 origin_x = origin_x - (diff / 2.0);
-                crop_width = crop_width + (diff / 2.0);
+                crop_width = crop_height;
 
             } else if (crop_width > crop_height) {
                 float diff = crop_width - crop_height;
                 printf("diff: %f\n",diff);
                 origin_y = origin_y - (diff / 2.0);
-                crop_height = crop_height + (diff / 2.0);
+                crop_height = crop_width;
             }
             printf("MIDDLE: origin_x: %f origin_y: %f crop_width: %f crop_height: %f\n",origin_x, origin_y, crop_width, crop_height);
 
@@ -281,7 +276,7 @@ public:
             }
 
             printf("AFTER : origin_x: %f origin_y: %f crop_width: %f crop_height: %f\n",origin_x, origin_y, crop_width, crop_height);
-            cv::Mat croppedImage = cv_im(cv::Rect(origin_x, origin_y, crop_width, crop_height));
+            cv::Mat croppedImage = cv_im(cv::Rect(origin_x, origin_y, crop_width, crop_height)) ;
             sensor_msgs::ImagePtr img_msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", croppedImage).toImageMsg();
             boost::shared_ptr<autobot::detected_img> detected_img = boost::make_shared<autobot::detected_img>();
             boost::shared_ptr<autobot::bounding_box> bbox = boost::make_shared<autobot::bounding_box>();
@@ -298,10 +293,23 @@ public:
             detect_img_pub.publish<autobot::detected_img>(detected_img);
 
             if (displayToScreen) {
-                cv::imshow("crop", croppedImage);
+                //cv::imshow("crop", croppedImage);
                 cv::waitKey(1);
             }
+            
         }
+        
+        for( int n=0; n < numBoundingBoxes; n++ ) {
+            float* bb = bbCPU + (n * 4);
+            cv::rectangle( cv_im, cv::Point( bb[0], bb[1] ), cv::Point( bb[2], bb[3]), cv::Scalar( 255, 55, 0 ), +1, 4 );
+        }
+        
+        // Update GUI Window
+        if (displayToScreen) {
+            cv::imshow(OPENCV_WINDOW, cv_im);
+            cv::waitKey(1);
+        }
+
 
     }
 };
