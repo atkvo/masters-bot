@@ -56,6 +56,28 @@ chmod +x init.sh
 ./init.sh
 ```
 
+### Quick Usage
+
+> Note: Always source the setup file `source {project}/devel/setup.bash` in every new shell opened.
+
+#### Core Launch
+
+The core nodes for the project are: `motorControl.py`, `pidControl.py`, `serial_node.py`, `pathFinder.py`, and `urg_node`. There is a launch file for running these core modules in the root project folder. Use the following command to start up the core nodes:
+
+```
+cd {project}
+source devel/setup.bash
+roslaunch autocore.launch
+```
+
+#### Launch files
+
+Any vision based nodes require the ZED camera to be launched. The launch file is located at: `src/autobot/launch/zed_camera_autobot.launch`. Run this launch file before running any other vision launch files.
+
+#### Remote Control
+
+The node `keySteer.py` is used to remotely control the vehicle via keyboard input. This node must be launched **after** the `autocore.launch` launch file.
+
 ### Editor Settings
 
 Please use the following editor settings to make sure source code is consistent across all users.
